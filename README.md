@@ -1,18 +1,32 @@
 # loombreaker
 CS-480 Capstone Project
 
-## Problems with web search:
+This project is intended to test some ideas around:
+* topic-specific search engines
+* Generative AI with transparent training
+* Generative AI with citations
+* peer-networking for topic-specific search engines
+
+Within the scope of CS-480, the target deliverables are:
+1. a custom search engine is configured using open source indexing & crawling tools
+2. documents from the search engine are ingested into markov a bayseian network with links to source docs
+3. markov chains are produced with ranked lists of source documents.
+
+Everything beyond that is a stretch goal.
+
+
+## Problems with web search
 * Web search is optimized with profit incentives
 * Public search engines are opaque, generalized, and also have profit incentives
 * Search engines need to handle the _whole_ web, so the resource requirements are huge.
 
-## Problems with Generative AI:
+## Problems with Generative AI
 * Generated results are focused on aesthetics – a ‘conversational’ response is given higher weight than an accurate response.
 * Opacity: There’s no real way for an end-user to understand how the result is produced from a training set
 * Obfuscation: There’s no way to cite or credit authors of source material, and no way to validate correctness without pre-existing knowledge or parallel (non-AI) research
 * Entropic degeneration (potential?): Generative AI is producing results that are presented on the web, and the web is the primary source of training data for most generative AI.
 
-## Potential approaches:
+## Potential approaches
 Note: philosophically, there should be a heavy emphasis on involving human intelligence in the tool-chain – we’re less interested in aesthetics and more interested in using the AI tools produce intermediate solutions that humans will refine.
 
 ### Generative AI w/ citations
@@ -21,7 +35,7 @@ Note: philosophically, there should be a heavy emphasis on involving human intel
 * tunable page rank
 * Tunable index (only index what’s relevant to the topic)
 
-#### Generative search, simplest formation:
+#### Generative search, simplest formation
 * Simplest formation: the documents in the index are ingested into a weighted markov chain
 * A result string produced with a weighted random-walk over the target markov chain
 * Each link in the chain includes a sorted list of sources that include that chain
@@ -57,5 +71,3 @@ Note: philosophically, there should be a heavy emphasis on involving human intel
 * First iterative improvement: user-guided analysis of peer-quality – peer indexes are searched by weight, based on the quality of results as identified by users.
 * Second iterative improvement: GAN to rank peer indexers
 * Third iterative improvement: indexers publish … statistics about how their chains are formed? How?
-* Fourth iterative improvement:
-
