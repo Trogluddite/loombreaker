@@ -7,6 +7,13 @@ This project is intended to test some ideas around:
 * Generative AI with citations
 * peer-networking for topic-specific search engines
 
+#### Luddites & Loom Breaking
+In the modern era, the Luddites are typically associated with anti-technology and anti-progress stances.
+Reality is more complex -- automated looms shifted the balance between labor and capital ownership during the industrial revolution.
+Breaking looms was, arguably, one of very few tactics that laborers could use to advocate for fair working conditions.
+
+If you believe the fourth industrial revolution has arrived, one hopes that democratizing powerful tools can help maintain a healthier balance between capital ownership and the needs of individuals.
+
 Within the scope of CS-480, the target deliverables are:
 1. a custom search engine is configured using open source indexing & crawling tools
 2. documents from the search engine are ingested into markov a bayseian network with links to source docs
