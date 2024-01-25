@@ -20,7 +20,6 @@ Because we're more interested in learning something about the problem space, int
   a. Additionally, a list of source documents is collected
   b. Both the response string and source documents are returned to the user
 
-![Alt text](./component_storyboard.svg)
 <img src="./component_storyboard.svg">
 
 # What we build:
@@ -29,8 +28,7 @@ Because we're more interested in learning something about the problem space, int
 3. A basic querying interface
 
 # the structure of the modified Bayesian network
-![Alt text](./storyboards/baysein_network_with_source_link.svg)
-<img src="./storyboards/baysein_network_with_source_link.svg">
+<img src="./baysein_network_with_source_link.svg">
 
 # what we configure/install
 1. SOLR
