@@ -20,8 +20,8 @@ Because we're more interested in learning something about the problem space, int
   a. Additionally, a list of source documents is collected
   b. Both the response string and source documents are returned to the user
 
-![Alt text](./storyboards/component_storyboard.svg)
-<img src="./storyboards/component_storyboard.svg">
+![Alt text](./component_storyboard.svg)
+<img src="./component_storyboard.svg">
 
 # What we build:
 1. The Markovizer
