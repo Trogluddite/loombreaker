@@ -1,0 +1,4 @@
+aiohttp~=3.7.4.post0
+multiprocess>=0.70.12.2
+PyYAML>=5.4.1
+ConfigArgParse~=1.5
