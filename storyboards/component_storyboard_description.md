@@ -41,14 +41,14 @@ Because we're more interested in learning something about the problem space, int
 1. to start, we'll just use a raw socket, and connect to it with Netcat. If necessary (E.G., if nc isn't availible), Joe will write a minimal CLI client in Python.
 <img src="./minimal_server_interaction.png">
 2. Adding a REST interface w/ Flask or Django is a stretch goal, but a basic outline of that interface might look like this: 
-<img src=".example_api_calls.svg">
+<img src="./example_api_calls.svg">
 3. adding a REST interface gives us more clear interaction and lets us use python Requests, Curl, or tools like Postman to interact with the server
 
 # Example cosine similarity comparison
 One stretch goal is to build a cosine similarity ranking for cited sources vs. the markov-produced result.
 The goal is to build a hueristic to judge the quality of citations. Other options shoudl be considered.
 Cosine ranking might look like this: 
-<img src=".cos_similarity.svg">
+<img src="./cos_similarity.svg">
 
 # references, how we'll build
 1. We'll use this guide to set up the search engine:
