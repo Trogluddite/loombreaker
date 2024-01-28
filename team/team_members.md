@@ -1,4 +1,3 @@
-|----------------------------|
 | **Name** | **Github User** |
 |----------|-----------------|
 | Zac      | ZacHeimgartner  |
@@ -6,4 +5,3 @@
 | Keelyn   | KPilcher74      |
 | Marcus   | WildfireGaming  |
 | Joe      | Trogluddite     |
-|----------------------------|
