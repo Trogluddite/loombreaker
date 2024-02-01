@@ -1,1 +1,9 @@
 This is where I'll keep any changes to the VM.
+
+2/1/2024
+* Installed Java JRE
+  * Commands Used: 
+    sudo apt install default-jre
+* SOLR 8.11.2 Installed
+  * Archive copied from local machine with SCP
+  * SOLR unpacked to /home/mpappas
