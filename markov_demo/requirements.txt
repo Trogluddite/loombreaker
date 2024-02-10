@@ -1,7 +1,7 @@
+ConfigArgParse~=1.5
+PyYAML>=5.4.1
 aiohttp~=3.7.4.post0
 multiprocess>=0.70.12.2
-PyYAML>=5.4.1
-ConfigArgParse~=1.5
-python-dotenv==1.0.1
-py-cord==2.4.1
 numpy==1.26.4
+py-cord==2.4.1
+python-dotenv==1.0.1
