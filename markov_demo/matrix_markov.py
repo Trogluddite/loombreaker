@@ -26,7 +26,7 @@ class MatrixMarkov:
         self._prob_recalc_needed = False
         self._token_count = 0
 
-    def add_tokens(self, ingest_text : str, defer_recalc : bool = False):
+    def add_document(self, ingest_text : str, defer_recalc : bool = False):
         """
         adds tokens to the token_index_map, and re-counts transitions.
 
@@ -96,7 +96,7 @@ class MatrixMarkov:
 def main():
     mm = MatrixMarkov()
     for l in test_strings:
-        mm.add_tokens(l, defer_recalc=True)
+        mm.add_document(l, defer_recalc=True)
     mm.recalc_probabilities()
     for _ in range(0,20):
         toks = mm.get_markov_chain(20, random.choice(list(mm.token_index_map.keys())))
