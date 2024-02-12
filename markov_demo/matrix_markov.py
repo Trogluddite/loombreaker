@@ -21,12 +21,13 @@ class MatrixMarkov:
     def __init__(self):
         self.token_index_map = dict()
         self.transition_matx = matrix('0;0')
+        self.tuple_to_source_map = dict()
 
         self._counts = zeros(shape=(0,0))
         self._prob_recalc_needed = False
         self._token_count = 0
 
-    def add_document(self, ingest_text : str, defer_recalc : bool = False):
+    def add_document(self, ingest_text : str, source_ref : str = None, defer_recalc : bool = False):
         """
         adds tokens to the token_index_map, and re-counts transitions.
 
@@ -35,23 +36,46 @@ class MatrixMarkov:
         and each transition is represented by the index value (from token_index_map)
         for tN (column) and tN+1 (row)
 
+        for each transition (represented by a 2-tuple), we record a list (and counts)
+        of documents that contributd to that link, in tuple_to_source_map
+
         by default, adding tokens recalulates transition probabilities, but that can
         be deferred by setting defer_recalc = True
 
         deferring probability recalc is desirable if we're batch-loading text
         """
         self._prob_recalc_needed = True
+
+        # build or expand token -> index mapping
         input_toks = [x.strip(punctuation) for x in ingest_text.split()]
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self._token_count += 1
+
+        # build or adjust transittion counts
         self._counts.resize((self._token_count, self._token_count), refcheck=False)
         transition_vect = [self.token_index_map[x] for x in input_toks]
         for i in range(0, len(input_toks) - 1):
             self._counts[transition_vect[i+1]][transition_vect[i]] += 1
+
+        # build 2-tuple -> source ref counts
+        for i in range(0, len(transition_vect) -1):
+            if i == len(transition_vect) - 1:
+                break
+            trans_tuple = (transition_vect[i+1], transition_vect[i])
+            if self.tuple_to_source_map.get(trans_tuple, None):
+                if self.tuple_to_source_map[trans_tuple].get(source_ref, None):
+                    self.tuple_to_source_map[trans_tuple][source_ref] += 1
+                else:
+                    self.tuple_to_source_map[trans_tuple] = {source_ref : 1}
+            else:
+                self.tuple_to_source_map[trans_tuple] = {source_ref : 1}
+
+        # recalc transition matrix
         if not defer_recalc:
             self.recalc_probabilities()
+
 
     def recalc_probabilities(self):
         """
@@ -66,6 +90,7 @@ class MatrixMarkov:
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
 
+
     def get_markov_chain(self, max_len : int, start_token : str):
         """
         do drunkard's walk over bayesian network
@@ -75,9 +100,12 @@ class MatrixMarkov:
             3. if the probabilities are 0, there is no transition from this token. Stop.
             4. otherwise, make a weighted random choice, and add that token to the list
             5. repeat until we've hit a stop or run down the iteration counter
+            6. for each link, look up the source document & count
 
         """
         collected_toks = [start_token]
+        collected_srcs = list()  #TODO: dedup & count
+
         curr_tok = start_token
 
         for _ in range(0,max_len):
@@ -87,11 +115,20 @@ class MatrixMarkov:
             if sum(probs_vect) != 1: # the last token may not have a transtion
                 break
             next_tok = random.choice(list(self.token_index_map.keys()), p=probs_vect)
+
+            # collect sources
+            next_tok_idx = self.token_index_map[next_tok]
+            for k in self.tuple_to_source_map.keys():
+                print(k)
+            src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
+
+            # prep next iter
             curr_tok = next_tok
             collected_toks.append(next_tok)
+            collected_srcs.append(src_list)
         stop_char = random.choice(['.', '!', '?' ])
         collected_toks[-1] = collected_toks[-1] + stop_char
-        return collected_toks
+        return {"markov_chain" : collected_toks, "references" : collected_srcs}
 
 def main():
     mm = MatrixMarkov()
