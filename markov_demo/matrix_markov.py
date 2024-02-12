@@ -66,7 +66,7 @@ class MatrixMarkov:
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
 
-    def get_markov_chain(self, len : int, start_token : str):
+    def get_markov_chain(self, max_len : int, start_token : str):
         """
         do drunkard's walk over bayesian network
             1. get index of starting token
@@ -80,19 +80,18 @@ class MatrixMarkov:
         collected_toks = [start_token]
         curr_tok = start_token
 
-        for _ in range(0,len):
+        for _ in range(0,max_len):
             curr_tok_idx = self.token_index_map[curr_tok]
             probs_vect = self.transition_matx[:, curr_tok_idx]
+            probs_vect /= probs_vect.sum() # normalize so sum is within numpy tolerance
             if sum(probs_vect) != 1: # the last token may not have a transtion
                 break
             next_tok = random.choice(list(self.token_index_map.keys()), p=probs_vect)
             curr_tok = next_tok
             collected_toks.append(next_tok)
-
         stop_char = random.choice(['.', '!', '?' ])
         collected_toks[-1] = collected_toks[-1] + stop_char
         return collected_toks
-
 
 def main():
     mm = MatrixMarkov()
