@@ -117,18 +117,19 @@ class MatrixMarkov:
             next_tok = random.choice(list(self.token_index_map.keys()), p=probs_vect)
 
             # collect sources
-            next_tok_idx = self.token_index_map[next_tok]
-            for k in self.tuple_to_source_map.keys():
-                print(k)
-            src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
+#            next_tok_idx = self.token_index_map[next_tok]
+#            for k in self.tuple_to_source_map.keys():
+#                print(k)
+#            src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
 
             # prep next iter
             curr_tok = next_tok
             collected_toks.append(next_tok)
-            collected_srcs.append(src_list)
+#            collected_srcs.append(src_list)
         stop_char = random.choice(['.', '!', '?' ])
         collected_toks[-1] = collected_toks[-1] + stop_char
-        return {"markov_chain" : collected_toks, "references" : collected_srcs}
+        return collected_toks
+        #return {"markov_chain" : collected_toks, "references" : collected_srcs}
 
 def main():
     mm = MatrixMarkov()
