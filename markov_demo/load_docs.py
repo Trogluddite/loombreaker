@@ -18,23 +18,15 @@ for doc in [x for x in docs_json['documents']]:
     with open('./test_docs/'+ tf, 'r') as infile:
         contents = infile.read()
         mm.add_document(contents, src, defer_recalc=True)
-        print(f'Added document:\n    filename: {tf}\n    source URL: {src}\n')
 mm.recalc_probabilities()
 
+print(mm.transition_matx)
+print(mm.token_index_map)
+print(mm.tuple_to_source_map)
 
 print('**GENERATING 50 MARKOV CHAINS**')
 for _ in range(0,50):
     start_tok = random.choice( list(mm.token_index_map.keys()) )
-    toks = mm.get_markov_chain(500, start_tok)
-    print(" ".join(toks))
-
-
-print('**SHOWING FIRST 10 TRANSITION-MAP REFERENCES**')
-tuple_map_keys = mm.tuple_to_source_map.keys()
-for idx,src_key in enumerate(tuple_map_keys):
-    if idx > 10:
-        break
-    print(f'citations key (2-tuple): {src_key}\n   contains: {mm.tuple_to_source_map[src_key]}')
-
-#print(mm.tuple_to_source_map)
+    resp_dict = mm.get_markov_chain(500, start_tok)
+    print(resp_dict)
 

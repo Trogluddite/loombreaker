@@ -56,14 +56,16 @@ class MatrixMarkov:
         # build or adjust transittion counts
         self._counts.resize((self._token_count, self._token_count), refcheck=False)
         transition_vect = [self.token_index_map[x] for x in input_toks]
+        print(input_toks)
+        print(transition_vect)
         for i in range(0, len(input_toks) - 1):
-            self._counts[transition_vect[i+1]][transition_vect[i]] += 1
+            self._counts[transition_vect[i]][transition_vect[i+1]] += 1
 
         # build 2-tuple -> source ref counts
         for i in range(0, len(transition_vect) -1):
             if i == len(transition_vect) - 1:
                 break
-            trans_tuple = (transition_vect[i+1], transition_vect[i])
+            trans_tuple = (transition_vect[i], transition_vect[i+1])
             if self.tuple_to_source_map.get(trans_tuple, None):
                 if self.tuple_to_source_map[trans_tuple].get(source_ref, None):
                     self.tuple_to_source_map[trans_tuple][source_ref] += 1
@@ -85,8 +87,13 @@ class MatrixMarkov:
             3. form a diagonal matrix, D, from probabilities
             4. transition matrix T = DC
         """
+        print(self._counts)
         col_sums = self._counts.sum(axis=0)
+        print(f'sums: {col_sums}')
         diag_matx = diag([(1/x if x != 0 else 0) for x in col_sums])
+        print(diag_matx)
+        print()
+        # counts matrix needs to rotate?
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
 
@@ -117,19 +124,22 @@ class MatrixMarkov:
             next_tok = random.choice(list(self.token_index_map.keys()), p=probs_vect)
 
             # collect sources
-#            next_tok_idx = self.token_index_map[next_tok]
-#            for k in self.tuple_to_source_map.keys():
-#                print(k)
-#            src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
+            next_tok_idx = self.token_index_map[next_tok]
+            print(f'curr_tok: {curr_tok}, curr_tok_idx: {curr_tok_idx}')
+            print(f'next_tok: {next_tok}, next_tok_idx: {next_tok_idx}')
+            src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
 
             # prep next iter
             curr_tok = next_tok
             collected_toks.append(next_tok)
-#            collected_srcs.append(src_list)
+            collected_srcs.append(src_list)
         stop_char = random.choice(['.', '!', '?' ])
         collected_toks[-1] = collected_toks[-1] + stop_char
-        return collected_toks
-        #return {"markov_chain" : collected_toks, "references" : collected_srcs}
+        retval = dict()
+        retval['markov_chain'] = collected_toks
+        retval['sources'] = collected_srcs
+        #return collected_toks
+        return retval
 
 def main():
     mm = MatrixMarkov()

@@ -2,43 +2,7 @@
   "documents": [
     {
       "url" : "https://en.wikipedia.org/wiki/Hydrogen",
-      "filename" : "hydrogen.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Helium",
-      "filename" : "helium.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Lithium",
-      "filename" : "lithium.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Beryllium",
-      "filename" : "beryllium.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Boron",
-      "filename" : "boron.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Carbon",
-      "filename" : "carbon.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Nitrogen",
-      "filename" : "nitrogen.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Oxygen",
-      "filename" : "oxygen.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Fluoride",
-      "filename" : "fluoride.txt"
-    },
-    {
-      "url" : "https://en.wikipedia.org/wiki/Neon",
-      "filename" : "neon.txt"
+      "filename" : "cat.txt"
     }
   ]
 }
