@@ -20,6 +20,7 @@ test_strings= [
 class MatrixMarkov:
     def __init__(self):
         self.token_index_map = dict()
+        self.index_token_map = dict() # for when we want to look up by index ID (maybe use bidict lib?)
         self.transition_matx = matrix('0;0')
         self.tuple_to_source_map = dict()
 
@@ -51,6 +52,7 @@ class MatrixMarkov:
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
+                self.index_token_map[self._token_count] = tok
                 self._token_count += 1
                 self._counts = pad(self._counts, (0,1))
 
@@ -106,32 +108,48 @@ class MatrixMarkov:
 
         """
         collected_toks = [start_token]
-        collected_srcs = list()  #TODO: dedup & count
+        collected_srcs = dict()
 
         curr_tok = start_token
 
         for _ in range(0,max_len):
             curr_tok_idx = self.token_index_map[curr_tok]
             probs_vect = self.transition_matx[:, curr_tok_idx]
-            # probs_vect /= probs_vect.sum() # normalize so sum is within numpy tolerance
-            if sum(probs_vect) != 1: # the last token may not have a transtion
+            if sum(probs_vect) == 0: # the last token may not have a transtion
                 break
-            next_tok = random.choice(list(self.token_index_map.keys()), p=probs_vect)
+            next_tok_idx = random.choice(list(self.index_token_map.keys()), p=probs_vect)
 
-            # collect sources
-            next_tok_idx = self.token_index_map[next_tok]
-            src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
+            # each link has a list of {source_url: count_of_contributions} dicts
+            # dedupe those counts so that we have a count of contributions for the entire markov chain
+            link_srcs = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
+            for lk in link_srcs.keys():
+                if collected_srcs.get(lk, None) is None:
+                    collected_srcs[lk] = 0
+                collected_srcs[lk] += link_srcs[lk]
 
             # prep next iter
-            curr_tok = next_tok
-            collected_toks.append(next_tok)
-            collected_srcs.append(src_list)
+            curr_tok = self.index_token_map[next_tok_idx]
+            collected_toks.append(self.index_token_map[next_tok_idx])
+
         collected_toks[-1] = collected_toks[-1] + '.'
         retval = dict()
         retval['markov_chain'] = collected_toks
         retval['sources'] = collected_srcs
-        #return collected_toks
         return retval
+
+    # useful for debugging
+    def lookup_probs(self, token):
+        token_idx = self.token_index_map.get(token, None)
+        print(token_idx)
+        if token_idx is None :
+            print(f"token {token} does not exist in map")
+            return
+        probs_vect = self.transition_matx[:, token_idx]
+        print(f'token: {token}, cum. probability: {sum(probs_vect)}')
+
+        for idx, val in enumerate(probs_vect):
+            if val > 0:
+                print(f'idx: {idx}, val: {val}')
 
 def main():
     mm = MatrixMarkov()
