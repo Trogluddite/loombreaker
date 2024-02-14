@@ -36,7 +36,7 @@ def get_resp(incomming_message, show_sources=False):
 
     response_lines = list()
     response_lines.append("GENERATED FROM CORPUS:")
-    if len(resp_dict['markov_chain'] == 0):
+    if len(resp_dict['markov_chain']) == 0:
         response_lines.append( f"**token {start_tok} did not match any in the corpus :(**" )
         return "\n".join(response_lines)
     else:
