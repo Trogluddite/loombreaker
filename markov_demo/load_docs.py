@@ -20,13 +20,14 @@ for doc in [x for x in docs_json['documents']]:
         mm.add_document(contents, src, defer_recalc=True)
 mm.recalc_probabilities()
 
-print(mm.transition_matx)
-print(mm.token_index_map)
-print(mm.tuple_to_source_map)
-
 print('**GENERATING 50 MARKOV CHAINS**')
-for _ in range(0,50):
+for _ in range(0,10):
     start_tok = random.choice( list(mm.token_index_map.keys()) )
     resp_dict = mm.get_markov_chain(500, start_tok)
-    print(resp_dict)
+    resp_string = " ".join(resp_dict['markov_chain'])
+
+    print(resp_string)
+    for x in resp_dict['sources']:
+        print(f'    {x}')
+    print()
 

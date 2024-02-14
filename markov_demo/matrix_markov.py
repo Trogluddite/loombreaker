@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from numpy import diag, matmul, matrix, random, zeros
+from numpy import diag, matmul, matrix, pad, random, zeros
 
 from string import punctuation
 
@@ -52,14 +52,13 @@ class MatrixMarkov:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self._token_count += 1
+                self._counts = pad(self._counts, (0,1))
 
-        # build or adjust transittion counts
-        self._counts.resize((self._token_count, self._token_count), refcheck=False)
         transition_vect = [self.token_index_map[x] for x in input_toks]
-        print(input_toks)
-        print(transition_vect)
         for i in range(0, len(input_toks) - 1):
-            self._counts[transition_vect[i]][transition_vect[i+1]] += 1
+            col = transition_vect[i+1]
+            row = transition_vect[i]
+            self._counts[col][row] = self._counts[col][row] + 1
 
         # build 2-tuple -> source ref counts
         for i in range(0, len(transition_vect) -1):
@@ -87,13 +86,9 @@ class MatrixMarkov:
             3. form a diagonal matrix, D, from probabilities
             4. transition matrix T = DC
         """
-        print(self._counts)
+
         col_sums = self._counts.sum(axis=0)
-        print(f'sums: {col_sums}')
         diag_matx = diag([(1/x if x != 0 else 0) for x in col_sums])
-        print(diag_matx)
-        print()
-        # counts matrix needs to rotate?
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
 
@@ -118,23 +113,20 @@ class MatrixMarkov:
         for _ in range(0,max_len):
             curr_tok_idx = self.token_index_map[curr_tok]
             probs_vect = self.transition_matx[:, curr_tok_idx]
-            probs_vect /= probs_vect.sum() # normalize so sum is within numpy tolerance
+            # probs_vect /= probs_vect.sum() # normalize so sum is within numpy tolerance
             if sum(probs_vect) != 1: # the last token may not have a transtion
                 break
             next_tok = random.choice(list(self.token_index_map.keys()), p=probs_vect)
 
             # collect sources
             next_tok_idx = self.token_index_map[next_tok]
-            print(f'curr_tok: {curr_tok}, curr_tok_idx: {curr_tok_idx}')
-            print(f'next_tok: {next_tok}, next_tok_idx: {next_tok_idx}')
             src_list = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
 
             # prep next iter
             curr_tok = next_tok
             collected_toks.append(next_tok)
             collected_srcs.append(src_list)
-        stop_char = random.choice(['.', '!', '?' ])
-        collected_toks[-1] = collected_toks[-1] + stop_char
+        collected_toks[-1] = collected_toks[-1] + '.'
         retval = dict()
         retval['markov_chain'] = collected_toks
         retval['sources'] = collected_srcs
@@ -148,7 +140,6 @@ def main():
     mm.recalc_probabilities()
     for _ in range(0,20):
         toks = mm.get_markov_chain(20, random.choice(list(mm.token_index_map.keys())))
-        print(" ".join(toks))
 
 if __name__ == '__main__':
     main()
