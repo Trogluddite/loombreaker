@@ -37,7 +37,7 @@ def get_resp(incomming_message, show_sources=False):
 
     response_lines = list()
     response_lines.append("GENERATED FROM CORPUS:")
-    response_lines.append(f"{ ' '.join(resp_dict['get_markov_chain'])}")
+    response_lines.append(f"{ ' '.join(resp_dict['markov_chain'])}")
 
     if show_sources:
         sorted_citations = list()
