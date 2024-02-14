@@ -34,10 +34,13 @@ def get_resp(incomming_message, show_sources=False):
     start_tok = choice(input_toks)
     resp_dict = matMark.get_markov_chain(max_len=200, start_token=start_tok)
 
-
     response_lines = list()
     response_lines.append("GENERATED FROM CORPUS:")
-    response_lines.append(f"{ ' '.join(resp_dict['markov_chain'])}")
+    if len(resp_dict['markov_chain'] == 0):
+        response_lines.append( f"**token {start_tok} did not match any in the corpus :(**" )
+        return "\n".join(response_lines)
+    else:
+        response_lines.append(f"{ ' '.join(resp_dict['markov_chain'])}")
 
     if show_sources:
         sorted_citations = list()
@@ -51,7 +54,7 @@ def get_resp(incomming_message, show_sources=False):
                 break
             k,v = sorted_citations[i]
             response_lines.append(f"    {v}: counted {k} times") #unpack sort tuple to reverse key/value
-        return "\n".join(response_lines)
+    return "\n".join(response_lines)
 
 
 @bot.event
