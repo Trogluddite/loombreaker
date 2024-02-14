@@ -111,6 +111,8 @@ class MatrixMarkov:
         collected_srcs = dict()
 
         curr_tok = start_token
+        if self.token_index_map.get(curr_tok, None) is None:
+            return  {'markov_chain' : [], 'sources': []}
 
         for _ in range(0,max_len):
             curr_tok_idx = self.token_index_map[curr_tok]
