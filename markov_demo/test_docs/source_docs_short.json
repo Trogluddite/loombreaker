@@ -1,0 +1,16 @@
+{
+  "documents": [
+    {
+      "url" : "https://en.wikipedia.org/wiki/Hydrogen",
+      "filename" : "cat.txt"
+    },
+    {
+      "url" : "https://en.wikipedia.org/wiki/Helium",
+      "filename" : "dog.txt"
+    },
+    {
+      "url" : "https://en.wikipedia.org/wiki/Lithium",
+      "filename" : "bird.txt"
+    }
+  ]
+}
