@@ -13,19 +13,24 @@ from matrix_markov import MatrixMarkov
 load_dotenv()
 bot = discord.Bot()
 
+
+#### -- DOCS LOADING STARTS HERE ---
 # loading static docs for now, source_docs.json has a list of 10 wikipedia pages
 docs_map_path = './test_docs/source_docs.json'
 with open(docs_map_path, 'r') as json_doc:
     docs_json = json.load(json_doc)
 
 matMark = MatrixMarkov()
+
 for doc in [x for x in docs_json['documents']]:
     tf = doc['filename']
     src = doc['url']
     with open('./test_docs/'+ tf, 'r') as infile:
         contents = infile.read()
         matMark.add_document(contents, src, defer_recalc=True)
-    matMark.recalc_probabilities()
+matMark.recalc_probabilities()
+# If your loading one doc, use defer_recalc=False
+#### -- DOCS LOADING ENDS HERE ---
 
 
 def get_resp(incomming_message, show_sources=False):
@@ -40,6 +45,7 @@ def get_resp(incomming_message, show_sources=False):
         response_lines.append( f"**token {start_tok} did not match any in the corpus :(**" )
         return "\n".join(response_lines)
     else:
+        # response is python list with words in it
         response_lines.append(f"{ ' '.join(resp_dict['markov_chain'])}")
 
     if show_sources:
@@ -63,6 +69,6 @@ async def on_ready():
 
 @bot.slash_command(name = "search", description = "Query the bot's Bayesian network")
 async def search(ctx, search_string: str, show_sources: bool):
-    await ctx.respond(get_resp(search_string, show_sources))
+    await ctx.respod(get_resp(search_string, show_sources))
 
 bot.run(os.getenv('TOKEN'))
