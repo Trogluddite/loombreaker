@@ -5,3 +5,4 @@ multiprocess>=0.70.12.2
 numpy==1.26.4
 py-cord==2.4.1
 python-dotenv==1.0.1
+requests==2.31.0
