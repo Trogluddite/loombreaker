@@ -13,9 +13,25 @@ from matrix_markov import MatrixMarkov
 load_dotenv()
 bot = discord.Bot()
 
+#### -- SOLR DOCS LOADING STARTS HERE ---
 
-#### -- DOCS LOADING STARTS HERE ---
-# loading static docs for now, source_docs.json has a list of 10 wikipedia pages
+response = requests.get("http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch")
+docs_json = response.json()  
+
+matMark = MatrixMarkov()
+
+for doc in [x for x in docs_json['response']['docs']]:
+    cont = doc['content']
+    src = doc['url']
+    matMark.add_document(cont, src, defer_recalc=True)
+matMark.recalc_probabilities()
+
+#### SOLR DOCS LOADING ENDS HERE ---
+
+'''
+#### -- STATIC DOCS LOADING STARTS HERE ---
+# loading static docs for now, source_docs.json has a list of 10 wikipedia pages 
+
 docs_map_path = './test_docs/source_docs.json'
 with open(docs_map_path, 'r') as json_doc:
     docs_json = json.load(json_doc)
@@ -30,8 +46,8 @@ for doc in [x for x in docs_json['documents']]:
         matMark.add_document(contents, src, defer_recalc=True)
 matMark.recalc_probabilities()
 # If your loading one doc, use defer_recalc=False
-#### -- DOCS LOADING ENDS HERE ---
-
+#### -- STATIC DOCS LOADING ENDS HERE ---
+'''
 
 def get_resp(incomming_message, show_sources=False):
     # this really isn't searching -- we're just generating candidate text

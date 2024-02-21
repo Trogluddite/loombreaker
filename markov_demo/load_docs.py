@@ -1,23 +1,20 @@
 #!/usr/bin/env python
+import requests
 import json
 
 from numpy import random
 
 from matrix_markov import MatrixMarkov
 
-docs_map_path = './test_docs/source_docs.json'
-
-docs_json = dict()
-with open(docs_map_path, 'r') as json_doc:
-    docs_json = json.load(json_doc)
+response = requests.get("http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch")
+docs_json = response.json()  
 
 mm = MatrixMarkov()
-for doc in [x for x in docs_json['documents']]:
-    tf = doc['filename']
+
+for doc in [x for x in docs_json['response']['docs']]:
+    cont = doc['content']
     src = doc['url']
-    with open('./test_docs/'+ tf, 'r') as infile:
-        contents = infile.read()
-        mm.add_document(contents, src, defer_recalc=True)
+    mm.add_document(cont, src, defer_recalc=True)
 mm.recalc_probabilities()
 
 print('**GENERATING 10 MARKOV CHAINS**')
