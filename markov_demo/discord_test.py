@@ -5,6 +5,7 @@ from string import punctuation
 
 import discord
 import os
+import requests
 from dotenv import load_dotenv
 
 from matrix_markov import MatrixMarkov
@@ -16,13 +17,20 @@ bot = discord.Bot()
 #### -- SOLR DOCS LOADING STARTS HERE ---
 
 response = requests.get("http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch")
-docs_json = response.json()  
+
+## super basic safety check
+if response.status_code == 200:
+    docs_json = response.json()
+else:
+    docs_json = {'response' : { 'docs' : [{'content':"no content", "url" : "NO URL"}]}}
 
 matMark = MatrixMarkov()
 
+print("LOADED DOCS FROM SOURCES:")
 for doc in [x for x in docs_json['response']['docs']]:
     cont = doc['content']
     src = doc['url']
+    print(src)
     matMark.add_document(cont, src, defer_recalc=True)
 matMark.recalc_probabilities()
 
@@ -85,6 +93,6 @@ async def on_ready():
 
 @bot.slash_command(name = "search", description = "Query the bot's Bayesian network")
 async def search(ctx, search_string: str, show_sources: bool):
-    await ctx.respod(get_resp(search_string, show_sources))
+    await ctx.respond(get_resp(search_string, show_sources))
 
 bot.run(os.getenv('TOKEN'))
