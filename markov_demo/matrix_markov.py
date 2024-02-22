@@ -4,18 +4,6 @@ from numpy import diag, matmul, matrix, pad, random, zeros
 
 from string import punctuation
 
-test_strings= [
-        "hello, this is  the first sentence.",
-        "this is the second sentence.",
-        "my cat is weird",
-        "why is my cat weird?",
-        "my cat's breath smells like rabbit.",
-        "hello, apple banana cheese rabbits.",
-        "I like cheese but cheese does not like me.",
-        "my cat tried to eat  these rabbits I'm rabbit sitting. hello this is cheese hello this isn't hello",
-        "passion fruit is not orange, cheese is orange"
-        ]
-
 
 class MatrixMarkov:
     def __init__(self):
@@ -154,12 +142,7 @@ class MatrixMarkov:
                 print(f'idx: {idx}, val: {val}')
 
 def main():
-    mm = MatrixMarkov()
-    for l in test_strings:
-        mm.add_document(l, defer_recalc=True)
-    mm.recalc_probabilities()
-    for _ in range(0,20):
-        toks = mm.get_markov_chain(20, random.choice(list(mm.token_index_map.keys())))
+    pass
 
 if __name__ == '__main__':
     main()
