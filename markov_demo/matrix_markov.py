@@ -5,6 +5,9 @@ from numpy import diag, matmul, matrix, pad, random, zeros
 from string import punctuation
 
 
+START_TOK = "<START>"
+STOP_TOK = "<STOP>"
+
 class MatrixMarkov:
     def __init__(self):
         self.token_index_map = dict()
@@ -36,7 +39,8 @@ class MatrixMarkov:
         self._prob_recalc_needed = True
 
         # build or expand token -> index mapping
-        input_toks = [x.strip(punctuation) for x in ingest_text.split()]
+        #input_toks = [x.strip(punctuation) for x in ingest_text.split()]
+        input_toks = self.tokenize_input(ingest_text)
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
@@ -66,6 +70,28 @@ class MatrixMarkov:
         # recalc transition matrix
         if not defer_recalc:
             self.recalc_probabilities()
+
+
+    def tokenize_input(self, input_text : str):
+        """
+        add arbitrary start/stop tokens to indicate beginning and end of statements
+        parses based on hard stops, which are assumed too be ?!. and newline
+        """
+        words = []
+        lines = input_text.split('\n')
+        for line in lines:
+            tokens = line.split()
+            if len(tokens) == 0:
+                continue
+            tokens[len(tokens) - 1] = tokens[len(tokens) - 1].strip(".?!")
+            tokens = [START_TOK] + tokens + [STOP_TOK]
+            indexes_with_stops = [tokens.index(x) for x in tokens if x.strip(".?!") != x]
+            for i in indexes_with_stops[::-1]:
+                tokens[i] = tokens[i].strip(".?!")
+                tokens.insert(i + 1, STOP_TOK)
+                tokens.insert(i + 2, START_TOK)
+            words += tokens
+        return words
 
 
     def recalc_probabilities(self):
@@ -119,13 +145,19 @@ class MatrixMarkov:
 
             # prep next iter
             curr_tok = self.index_token_map[next_tok_idx]
+            if curr_tok == STOP_TOK:
+                break
             collected_toks.append(self.index_token_map[next_tok_idx])
 
+        collected_toks = [tok for tok in collected_toks if tok != START_TOK]
         collected_toks[-1] = collected_toks[-1] + '.'
+
         retval = dict()
         retval['markov_chain'] = collected_toks
         retval['sources'] = collected_srcs
         return retval
+
+
 
     # useful for debugging
     def lookup_probs(self, token):
