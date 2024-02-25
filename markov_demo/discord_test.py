@@ -1,60 +1,83 @@
 #!/usr/bin/env python
+"""
+  provides the loombot interface to discord
+  uses a DiscordClient class to interface with MatrixMarkov
+  uses Requests to load documents from SOLR
+"""
 from random import choice, randrange
 from string import punctuation
+import os
 
 import discord
-import os
 import requests
 from dotenv import load_dotenv
 
 from matrix_markov import MatrixMarkov
 
-STATIC_QUERY = "http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch"
+SOLR_URL = "http://21.84.107.89:8983/solr/"
+SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch"
+
+STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
+
 EMPTY_DOC = {'response': {
     'docs': [{'content': "no content", "url": "NO URL"}]}}
+SOLR_QUERY_TIMEOUT = 180
 
 
 class DiscordClient:
+    """
+        stores discord bot instance
+        stores, and interfaces with, MatrixMarkov instance
+        providees interface to MatrixMarkov, and to SOLR
+    """
     def __init__(self):
         load_dotenv()
         self.bot = discord.Bot()
-        self.matMark = MatrixMarkov()
+        self.mat_mark = MatrixMarkov()
 
     def load_docs(self):
-        response = requests.get(STATIC_QUERY)
+        """
+        retrieves documents from the source (in this case, SOLR)
+        and then inserts them into the MatrixMarkov instance
+        """
+        response = requests.get(STATIC_QUERY_STR, timeout=SOLR_QUERY_TIMEOUT)
         # super basic safety check
         if response.status_code == 200:
             docs_json = response.json()
         else:
             docs_json = EMPTY_DOC
 
-        for doc in [x for x in docs_json['response']['docs']]:
+        for doc in list(docs_json['response']['docs']):
             cont = doc['content']
             src = doc['url']
-            self.matMark.add_document(cont, src, defer_recalc=True)
-        self.matMark.recalc_probabilities()
+            self.mat_mark.add_document(cont, src, defer_recalc=True)
+        self.mat_mark.recalc_probabilities()
 
     def get_resp(self, incomming_message, show_sources=False):
-        # this really isn't searching -- we're just generating candidate text
+        """
+            get a response from the MatrixMarkov instance, and format it for delivery
+            back to the discord client.
+
+            uses instance methods "get_paragraph" & "dedupe_and_sort_citations"
+        """
         input_toks = [x.strip(punctuation) for x in incomming_message.split()]
         start_tok = choice(input_toks)
         # fixme: should use an input tok
         paragraph_data = self.get_paragraph()
 
-        response_lines = list()
+        response_lines = []
         response_lines.append("GENERATED FROM CORPUS:")
         if len(paragraph_data['sentences']) == 0:
             response_lines.append(
                 f"**token {start_tok} did not match any in the corpus :(**"
             )
             return "\n".join(response_lines)
-        else:
-            # response is python list with words in it
-            response_lines.append(f"{ ' '.join(paragraph_data['sentences'])}")
+        # response is python list with words in it
+        response_lines.append(f"{ ' '.join(paragraph_data['sentences'])}")
 
         if show_sources:
             top_citations = self.dedupe_and_sort_citations(
-                paragraph_data['citations'])[0:3]
+            paragraph_data['citations'])[0:3]
             for i in range(0, 3):
                 if i >= len(top_citations):
                     response_lines.append(
@@ -66,12 +89,17 @@ class DiscordClient:
         return "\n".join(response_lines)
 
     def get_paragraph(self):
-        sentences = list()
-        unsorted_citations = list()
+        """
+            get a pseudo-paragraph and it's citations.
+            passes on unsorted citations list with possible duplications
+            (that workflow seems wonky)
+        """
+        sentences = []
+        unsorted_citations = []
 
-        start_tok = choice(list(self.matMark.token_index_map.keys()))
+        start_tok = choice(list(self.mat_mark.token_index_map.keys()))
 
-        resp_dict = self.matMark.get_markov_chain(100, start_tok)
+        resp_dict = self.mat_mark.get_markov_chain(100, start_tok)
         resp_dict['markov_chain'][0] = "    " + resp_dict['markov_chain'][0]
         sentences.append(" ".join(resp_dict['markov_chain']))
 
@@ -79,19 +107,23 @@ class DiscordClient:
             list(dict(resp_dict['sources']).items())
 
         for _ in range(0, randrange(5, 15)):
-            start_tok = choice(list(self.matMark.token_index_map.keys()))
-            resp_dict = self.matMark.get_markov_chain(100, start_tok)
+            start_tok = choice(list(self.mat_mark.token_index_map.keys()))
+            resp_dict = self.mat_mark.get_markov_chain(100, start_tok)
             sentences.append(" ".join(resp_dict['markov_chain']))
             unsorted_citations = unsorted_citations + \
                 list(dict(resp_dict['sources']).items())
 
-        resp = {'sentences': list(), 'citations': list()}
+        resp = {'sentences': [], 'citations': []}
         resp['sentences'] = sentences
         resp['citations'] = unsorted_citations
         return resp
 
     def dedupe_and_sort_citations(self, citation_list: list) -> list:
-        uniq_references = dict()
+        """
+            citations are lists of dicts, with each being {source_url : count}
+            this de-duplicates keys and folds counts into unique keys
+        """
+        uniq_references = {}
 
         for ref in citation_list:
             if uniq_references.get(ref[0], None):
@@ -99,7 +131,7 @@ class DiscordClient:
             else:
                 uniq_references[ref[0]] = ref[1]
 
-        sorted_citations = list()
+        sorted_citations = []
         for k, v in uniq_references.items():
             sort_tuple = (v, k)
             sorted_citations.append(sort_tuple)
@@ -108,7 +140,7 @@ class DiscordClient:
         return [{v: k} for k, v in sorted_citations]
 
 
-def main():
+def main(): #pylint: disable=missing-function-docstring
     dc = DiscordClient()
     dc.load_docs()
     bot = dc.bot
@@ -126,10 +158,10 @@ def main():
     @loom.command()
     async def reload_docs(ctx):
         dc.load_docs()
-        await ctx.respond(f"reloaded docs with static query")
+        await ctx.respond("reloaded docs with static query")
 
     bot.add_application_command(loom)
-    bot.run(os.getenv('TOKEN'))
+    bot.run(os.getenv("TOKEN"))
 
 
 if __name__ == '__main__':
