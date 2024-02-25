@@ -8,18 +8,24 @@ from string import punctuation
 START_TOK = "<START>"
 STOP_TOK = "<STOP>"
 
+
 class MatrixMarkov:
     def __init__(self):
         self.token_index_map = dict()
-        self.index_token_map = dict() # for when we want to look up by index ID (maybe use bidict lib?)
+        # for when we want to look up by index ID (maybe use bidict lib?)
+        self.index_token_map = dict()
         self.transition_matx = matrix('0;0')
         self.tuple_to_source_map = dict()
 
-        self._counts = zeros(shape=(0,0))
+        self._counts = zeros(shape=(0, 0))
         self._prob_recalc_needed = False
         self._token_count = 0
 
-    def add_document(self, ingest_text : str, source_ref : str = None, defer_recalc : bool = False):
+    def add_document(
+            self,
+            ingest_text: str,
+            source_ref: str = None,
+            defer_recalc: bool = False):
         """
         adds tokens to the token_index_map, and re-counts transitions.
 
@@ -39,40 +45,39 @@ class MatrixMarkov:
         self._prob_recalc_needed = True
 
         # build or expand token -> index mapping
-        #input_toks = [x.strip(punctuation) for x in ingest_text.split()]
+        # input_toks = [x.strip(punctuation) for x in ingest_text.split()]
         input_toks = self.tokenize_input(ingest_text)
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self.index_token_map[self._token_count] = tok
                 self._token_count += 1
-                self._counts = pad(self._counts, (0,1))
+                self._counts = pad(self._counts, (0, 1))
 
         transition_vect = [self.token_index_map[x] for x in input_toks]
         for i in range(0, len(input_toks) - 1):
-            col = transition_vect[i+1]
+            col = transition_vect[i + 1]
             row = transition_vect[i]
             self._counts[col][row] = self._counts[col][row] + 1
 
         # build 2-tuple -> source ref counts
-        for i in range(0, len(transition_vect) -1):
+        for i in range(0, len(transition_vect) - 1):
             if i == len(transition_vect) - 1:
                 break
-            trans_tuple = (transition_vect[i], transition_vect[i+1])
+            trans_tuple = (transition_vect[i], transition_vect[i + 1])
             if self.tuple_to_source_map.get(trans_tuple, None):
                 if self.tuple_to_source_map[trans_tuple].get(source_ref, None):
                     self.tuple_to_source_map[trans_tuple][source_ref] += 1
                 else:
-                    self.tuple_to_source_map[trans_tuple] = {source_ref : 1}
+                    self.tuple_to_source_map[trans_tuple] = {source_ref: 1}
             else:
-                self.tuple_to_source_map[trans_tuple] = {source_ref : 1}
+                self.tuple_to_source_map[trans_tuple] = {source_ref: 1}
 
         # recalc transition matrix
         if not defer_recalc:
             self.recalc_probabilities()
 
-
-    def tokenize_input(self, input_text : str):
+    def tokenize_input(self, input_text: str):
         """
         add arbitrary start/stop tokens to indicate beginning and end of statements
         parses based on hard stops, which are assumed too be ?!. and newline
@@ -85,14 +90,14 @@ class MatrixMarkov:
                 continue
             tokens[len(tokens) - 1] = tokens[len(tokens) - 1].strip(".?!")
             tokens = [START_TOK] + tokens + [STOP_TOK]
-            indexes_with_stops = [tokens.index(x) for x in tokens if x.strip(".?!") != x]
+            indexes_with_stops = [
+                tokens.index(x) for x in tokens if x.strip(".?!") != x]
             for i in indexes_with_stops[::-1]:
                 tokens[i] = tokens[i].strip(".?!")
                 tokens.insert(i + 1, STOP_TOK)
                 tokens.insert(i + 2, START_TOK)
             words += tokens
         return words
-
 
     def recalc_probabilities(self):
         """
@@ -104,12 +109,11 @@ class MatrixMarkov:
         """
 
         col_sums = self._counts.sum(axis=0)
-        diag_matx = diag([(1/x if x != 0 else 0) for x in col_sums])
+        diag_matx = diag([(1 / x if x != 0 else 0) for x in col_sums])
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
 
-
-    def get_markov_chain(self, max_len : int, start_token : str):
+    def get_markov_chain(self, max_len: int, start_token: str):
         """
         do drunkard's walk over bayesian network
             1. get index of starting token
@@ -126,18 +130,20 @@ class MatrixMarkov:
 
         curr_tok = start_token
         if self.token_index_map.get(curr_tok, None) is None:
-            return  {'markov_chain' : [], 'sources': []}
+            return {'markov_chain': [], 'sources': []}
 
-        for _ in range(0,max_len):
+        for _ in range(0, max_len):
             curr_tok_idx = self.token_index_map[curr_tok]
             probs_vect = self.transition_matx[:, curr_tok_idx]
-            if sum(probs_vect) == 0: # the last token may not have a transtion
+            if sum(probs_vect) == 0:  # the last token may not have a transtion
                 break
-            next_tok_idx = random.choice(list(self.index_token_map.keys()), p=probs_vect)
+            next_tok_idx = random.choice(
+                list(self.index_token_map.keys()), p=probs_vect)
 
             # each link has a list of {source_url: count_of_contributions} dicts
-            # dedupe those counts so that we have a count of contributions for the entire markov chain
-            link_srcs = self.tuple_to_source_map[ (curr_tok_idx, next_tok_idx) ]
+            # dedupe those counts so that we have a count of contributions for
+            # the entire markov chain
+            link_srcs = self.tuple_to_source_map[(curr_tok_idx, next_tok_idx)]
             for lk in link_srcs.keys():
                 if collected_srcs.get(lk, None) is None:
                     collected_srcs[lk] = 0
@@ -151,19 +157,20 @@ class MatrixMarkov:
 
         collected_toks = [tok for tok in collected_toks if tok != START_TOK]
         collected_toks[-1] = collected_toks[-1].strip(' ') + '.'
-        collected_toks[0] = collected_toks[0][0].upper() + collected_toks[0][1:]
+        collected_toks[0] = collected_toks[0][0].upper() + \
+            collected_toks[0][1:]
 
         retval = dict()
         retval['markov_chain'] = collected_toks
         retval['sources'] = collected_srcs
         return retval
 
-
     # useful for debugging
+
     def lookup_probs(self, token):
         token_idx = self.token_index_map.get(token, None)
         print(token_idx)
-        if token_idx is None :
+        if token_idx is None:
             print(f"token {token} does not exist in map")
             return
         probs_vect = self.transition_matx[:, token_idx]
@@ -173,8 +180,10 @@ class MatrixMarkov:
             if val > 0:
                 print(f'idx: {idx}, val: {val}')
 
+
 def main():
     pass
+
 
 if __name__ == '__main__':
     main()
