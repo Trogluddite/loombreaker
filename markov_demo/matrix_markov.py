@@ -150,13 +150,13 @@ class MatrixMarkov:
             collected_toks.append(self.index_token_map[next_tok_idx])
 
         collected_toks = [tok for tok in collected_toks if tok != START_TOK]
-        collected_toks[-1] = collected_toks[-1] + '.'
+        collected_toks[-1] = collected_toks[-1].strip(' ') + '.'
+        collected_toks[0] = collected_toks[0][0].upper() + collected_toks[0][1:]
 
         retval = dict()
         retval['markov_chain'] = collected_toks
         retval['sources'] = collected_srcs
         return retval
-
 
 
     # useful for debugging
