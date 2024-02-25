@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+"""
+    A class for building Bayeseian Networks and retreivinig Markov chains
+    MatrixMarkov uses bigrams/2-grams; optionally, references are recorded
+"""
 
 from numpy import diag, matmul, matrix, pad, random, zeros
-
-from string import punctuation
 
 
 START_TOK = "<START>"
@@ -10,12 +12,24 @@ STOP_TOK = "<STOP>"
 
 
 class MatrixMarkov:
+    """
+    * build, or add to, a Bayeseian network
+    * every token is given a unique index ID in token_index_map
+    * every index has a token, looked ups in index_token_map
+    * n-grams are n=2.
+    * Every n1=>n2 transition is a column,row pair in the _counts matrix
+    * probability of any token n=1 joning n=2 in the bigram is in the
+      transition matrix
+    * for every bigram, a tuple is used to key tuple_to_source_map
+    * when a document is ingested, its source key count is incremnted
+      for each bigram it contributs to the weights.
+    """
+
     def __init__(self):
-        self.token_index_map = dict()
-        # for when we want to look up by index ID (maybe use bidict lib?)
-        self.index_token_map = dict()
+        self.token_index_map = {}
+        self.index_token_map = {}
         self.transition_matx = matrix('0;0')
-        self.tuple_to_source_map = dict()
+        self.tuple_to_source_map = {}
 
         self._counts = zeros(shape=(0, 0))
         self._prob_recalc_needed = False
@@ -29,14 +43,6 @@ class MatrixMarkov:
         """
         adds tokens to the token_index_map, and re-counts transitions.
 
-        for any series of tokens {t0, t1, t2 ... tN}, a 2-tuple (tN, tN+1)
-        represents a transition. The counts matrix is a 2d column by row array
-        and each transition is represented by the index value (from token_index_map)
-        for tN (column) and tN+1 (row)
-
-        for each transition (represented by a 2-tuple), we record a list (and counts)
-        of documents that contributd to that link, in tuple_to_source_map
-
         by default, adding tokens recalulates transition probabilities, but that can
         be deferred by setting defer_recalc = True
 
@@ -45,7 +51,6 @@ class MatrixMarkov:
         self._prob_recalc_needed = True
 
         # build or expand token -> index mapping
-        # input_toks = [x.strip(punctuation) for x in ingest_text.split()]
         input_toks = self.tokenize_input(ingest_text)
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
@@ -54,6 +59,7 @@ class MatrixMarkov:
                 self._token_count += 1
                 self._counts = pad(self._counts, (0, 1))
 
+        # vector indexes for each token; n, n+1 pairs represent bigrams
         transition_vect = [self.token_index_map[x] for x in input_toks]
         for i in range(0, len(input_toks) - 1):
             col = transition_vect[i + 1]
@@ -81,6 +87,7 @@ class MatrixMarkov:
         """
         add arbitrary start/stop tokens to indicate beginning and end of statements
         parses based on hard stops, which are assumed too be ?!. and newline
+        FUTURE: this is a pre-procssing method; pipeline this
         """
         words = []
         lines = input_text.split('\n')
@@ -107,7 +114,6 @@ class MatrixMarkov:
             3. form a diagonal matrix, D, from probabilities
             4. transition matrix T = DC
         """
-
         col_sums = self._counts.sum(axis=0)
         diag_matx = diag([(1 / x if x != 0 else 0) for x in col_sums])
         self.transition_matx = matmul(self._counts, diag_matx)
@@ -115,7 +121,10 @@ class MatrixMarkov:
 
     def get_markov_chain(self, max_len: int, start_token: str):
         """
-        do drunkard's walk over bayesian network
+        returns a dict: {'markov_chan' : ['list','of','tokens']
+                         'sources' : [ {source_url: count_of_contributions}]
+                         }
+        does a drunkard's walk over bayesian network
             1. get index of starting token
             2. get that column from the transition matrix
                 this vector represents transittion probabilities from  the current token
@@ -123,10 +132,11 @@ class MatrixMarkov:
             4. otherwise, make a weighted random choice, and add that token to the list
             5. repeat until we've hit a stop or run down the iteration counter
             6. for each link, look up the source document & count
-
+            7. remove any syntax cues (like START/STOP tokens), add punctuation
+        FUTURE: post-processing should be a separate method; pipeline this
         """
         collected_toks = [start_token]
-        collected_srcs = dict()
+        collected_srcs = {}
 
         curr_tok = start_token
         if self.token_index_map.get(curr_tok, None) is None:
@@ -160,14 +170,17 @@ class MatrixMarkov:
         collected_toks[0] = collected_toks[0][0].upper() + \
             collected_toks[0][1:]
 
-        retval = dict()
+        retval = {}
         retval['markov_chain'] = collected_toks
         retval['sources'] = collected_srcs
         return retval
 
-    # useful for debugging
-
     def lookup_probs(self, token):
+        """
+        intendeed to be used for debugging or other metrics
+        given any token n=1, look up the probability of the n=2 token
+        forming the bigram
+        """
         token_idx = self.token_index_map.get(token, None)
         print(token_idx)
         if token_idx is None:
@@ -181,7 +194,7 @@ class MatrixMarkov:
                 print(f'idx: {idx}, val: {val}')
 
 
-def main():
+def main():  # pylint: disable=missing-function-docstring
     pass
 
 

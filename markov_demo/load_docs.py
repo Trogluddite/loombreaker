@@ -1,18 +1,20 @@
 #!/usr/bin/env python
+
+''' Example code to exercise the MatrixMarkov class '''
 import requests
-import json
 
 from numpy import random
 
 from matrix_markov import MatrixMarkov
 
 response = requests.get(
-    "http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch")
+    "http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch",
+    timeout=180)
 docs_json = response.json()
 
 mm = MatrixMarkov()
 
-for doc in [x for x in docs_json['response']['docs']]:
+for doc in list(docs_json['response']['docs']):
     cont = doc['content']
     src = doc['url']
     mm.add_document(cont, src, defer_recalc=True)
@@ -20,8 +22,9 @@ mm.recalc_probabilities()
 
 
 def get_paragraph():
-    sentences = list()
-    unsorted_citations = list()
+    ''' make a fake "paragraph" from markov data, includes list of citations '''
+    sentences = []
+    unsorted_citations = []
 
     start_tok = random.choice(list(mm.token_index_map.keys()))
 
@@ -39,14 +42,15 @@ def get_paragraph():
         unsorted_citations = unsorted_citations + \
             list(dict(resp_dict['sources']).items())
 
-    resp = {'sentences': list(), 'citations': list()}
+    resp = {'sentences': [], 'citations': []}
     resp['sentences'] = sentences
     resp['citations'] = unsorted_citations
     return resp
 
 
 def dedupe_and_sort_citations(citation_list: list) -> list:
-    uniq_references = dict()
+    ''' remove duplicate citation keys and fold counts into new references dict '''
+    uniq_references = {}
 
     for ref in citation_list:
         if uniq_references.get(ref[0], None):
@@ -54,8 +58,8 @@ def dedupe_and_sort_citations(citation_list: list) -> list:
         else:
             uniq_references[ref[0]] = ref[1]
 
-    sorted_citations = list()
-    for k, v in uniq_references.items():
+    sorted_citations = []
+    for k, v in uniq_references.items(): # pylint: disable=redefined-outer-name
         sort_tuple = (v, k)
         sorted_citations.append(sort_tuple)
 
@@ -65,7 +69,7 @@ def dedupe_and_sort_citations(citation_list: list) -> list:
 
 paragraph_data = get_paragraph()
 top_citations = dedupe_and_sort_citations(paragraph_data['citations'])[0:3]
-paragraph_text = " ".join(paragraph_data['sentences'])
+paragraph_text = " ".join(paragraph_data['sentences']) #pylint: disable=invalid-name
 
 print(paragraph_text)
 print("-> Top 3 Citations:")
