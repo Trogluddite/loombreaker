@@ -10,7 +10,9 @@ from dotenv import load_dotenv
 from matrix_markov import MatrixMarkov
 
 STATIC_QUERY = "http://20.84.107.89:8983/solr/nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch"
-EMPTY_DOC = {'response' : { 'docs' : [{'content':"no content", "url" : "NO URL"}]}}
+EMPTY_DOC = {'response': {
+    'docs': [{'content': "no content", "url": "NO URL"}]}}
+
 
 class DiscordClient:
     def __init__(self):
@@ -20,7 +22,7 @@ class DiscordClient:
 
     def load_docs(self):
         response = requests.get(STATIC_QUERY)
-        ## super basic safety check
+        # super basic safety check
         if response.status_code == 200:
             docs_json = response.json()
         else:
@@ -36,7 +38,7 @@ class DiscordClient:
         # this really isn't searching -- we're just generating candidate text
         input_toks = [x.strip(punctuation) for x in incomming_message.split()]
         start_tok = choice(input_toks)
-        #fixme: should use an input tok
+        # fixme: should use an input tok
         paragraph_data = self.get_paragraph()
 
         response_lines = list()
@@ -51,36 +53,39 @@ class DiscordClient:
             response_lines.append(f"{ ' '.join(paragraph_data['sentences'])}")
 
         if show_sources:
-            top_citations = self.dedupe_and_sort_citations(paragraph_data['citations'])[0:3]
-            for i in range(0,3):
+            top_citations = self.dedupe_and_sort_citations(
+                paragraph_data['citations'])[0:3]
+            for i in range(0, 3):
                 if i >= len(top_citations):
-                    response_lines.append(f"    Only {i} sources for this chain!")
+                    response_lines.append(
+                        f"    Only {i} sources for this chain!")
                     break
-                k,v = list(top_citations[i].items())[0]
+                k, v = list(top_citations[i].items())[0]
                 response_lines.append(f"    {k}: counted {v} times")
 
         return "\n".join(response_lines)
-
 
     def get_paragraph(self):
         sentences = list()
         unsorted_citations = list()
 
-        start_tok = choice( list(self.matMark.token_index_map.keys()) )
+        start_tok = choice(list(self.matMark.token_index_map.keys()))
 
         resp_dict = self.matMark.get_markov_chain(100, start_tok)
         resp_dict['markov_chain'][0] = "    " + resp_dict['markov_chain'][0]
         sentences.append(" ".join(resp_dict['markov_chain']))
 
-        unsorted_citations = unsorted_citations + list(dict(resp_dict['sources']).items())
+        unsorted_citations = unsorted_citations + \
+            list(dict(resp_dict['sources']).items())
 
         for _ in range(0, randrange(5, 15)):
-            start_tok = choice( list(self.matMark.token_index_map.keys()) )
+            start_tok = choice(list(self.matMark.token_index_map.keys()))
             resp_dict = self.matMark.get_markov_chain(100, start_tok)
             sentences.append(" ".join(resp_dict['markov_chain']))
-            unsorted_citations = unsorted_citations + list(dict(resp_dict['sources']).items())
+            unsorted_citations = unsorted_citations + \
+                list(dict(resp_dict['sources']).items())
 
-        resp = { 'sentences' : list(), 'citations' : list() }
+        resp = {'sentences': list(), 'citations': list()}
         resp['sentences'] = sentences
         resp['citations'] = unsorted_citations
         return resp
@@ -100,7 +105,7 @@ class DiscordClient:
             sorted_citations.append(sort_tuple)
 
         sorted_citations = sorted(sorted_citations, reverse=True)
-        return [{v:k} for k, v in sorted_citations]
+        return [{v: k} for k, v in sorted_citations]
 
 
 def main():
@@ -125,6 +130,7 @@ def main():
 
     bot.add_application_command(loom)
     bot.run(os.getenv('TOKEN'))
+
 
 if __name__ == '__main__':
     main()
