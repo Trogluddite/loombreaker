@@ -52,6 +52,7 @@ class MatrixMarkov:
 
         # build or expand token -> index mapping
         input_toks = self.tokenize_input(ingest_text)
+        print(f'ingesting document: {source_ref} with token count: {len(input_toks)}')
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
