@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 
 from matrix_markov import MatrixMarkov
 
-SOLR_URL = "http://21.84.107.89:8983/solr/"
-SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=nutch"
+SOLR_URL = "http://20.84.107.89:8983/solr/"
+SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
 
 STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
 
