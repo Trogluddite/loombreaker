@@ -19,26 +19,30 @@ def main():
     for i in range(1, NUM_ROUNDS + 1):
         print(f"Crawl Round: {i}")
  
-        #Generate Fetch List. Tune generation if crawl has run more than once
+    #Generate Fetch List. Tune generation if crawl has run more than once
         if first:
             subprocess.run([f"{NUTCH_HOME}/bin/nutch", "generate", f"{CRAWL_DIR}/crawldb", f"{CRAWL_DIR}/segments"], check=True)
             first = 0
         else:
             subprocess.run([f"{NUTCH_HOME}/bin/nutch", "generate", f"{CRAWL_DIR}/crawldb", f"{CRAWL_DIR}/segments", "-topN", "1000"], check=True)
-   
+    
         #Find latest segment
         raw_latest_segment = subprocess.run(f"ls -d {SEGMENTS_DIR}/2* | tail -1", shell=True, text=True, capture_output=True)
         latest_segment = raw_latest_segment.stdout.strip()
           
-        #Fetch
-        subprocess.run([f"{NUTCH_HOME}/bin/nutch", "fetch", latest_segment], check=True)
+        while True: #A glitch was introduced when the process was stopped in the middle, and it required the half finished segments to be deleted. I added a command that removes the segment if the command cannot finished.
+            try:
+                #Fetch
+                subprocess.run([f"{NUTCH_HOME}/bin/nutch", "fetch", latest_segment], check=True)
         
-        #Parse
-        subprocess.run([f"{NUTCH_HOME}/bin/nutch", "parse", latest_segment], check=True)
-        
-        #Update DB
-        subprocess.run([f"{NUTCH_HOME}/bin/nutch", "updatedb", f"{CRAWL_DIR}/crawldb", latest_segment], check=True)
-        print("Crawl Complete!")
+                #Parse
+                subprocess.run([f"{NUTCH_HOME}/bin/nutch", "parse", latest_segment], check=True)
+
+                #Update DB
+                subprocess.run([f"{NUTCH_HOME}/bin/nutch", "updatedb", f"{CRAWL_DIR}/crawldb", latest_segment], check=True)
+                print("Crawl Complete!")
+            except:
+                subprocess.run(["rm", "-r", latest_segment])
 
     #Invert Links for Indexing
     subprocess.run([f"{NUTCH_HOME}/bin/nutch", "invertlinks", f"{CRAWL_DIR}/linkdb", "-dir", f"{CRAWL_DIR}/segments"], check=True)
