@@ -16,8 +16,8 @@ from dotenv import load_dotenv
 from matrix_markov import MatrixMarkov
 
 SOLR_URL = "http://20.84.107.89:8983/solr/"
-#SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
-SOLR_QUERY="nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
+# SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
+SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
 
 
 STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
@@ -33,6 +33,7 @@ class DiscordClient:
         stores, and interfaces with, MatrixMarkov instance
         providees interface to MatrixMarkov, and to SOLR
     """
+
     def __init__(self):
         load_dotenv()
         self.bot = discord.Bot()
@@ -80,7 +81,7 @@ class DiscordClient:
 
         if show_sources:
             top_citations = self.dedupe_and_sort_citations(
-            paragraph_data['citations'])[0:3]
+                paragraph_data['citations'])[0:3]
             for i in range(0, 3):
                 if i >= len(top_citations):
                     response_lines.append(
@@ -142,14 +143,18 @@ class DiscordClient:
         sorted_citations = sorted(sorted_citations, reverse=True)
         return [{v: k} for k, v in sorted_citations]
 
+
 class CrawlerControl:
     """
         provides control interface to webcrawler
     """
+
     def __init__(self):
         pass
+
     def start_crawl(self):
         _ = subprocess.Popen(["../automation_tests/automate.py"])
+
     def check_crawl(self):
         crawler_state = ""
         with open("../automation_tests/crawler_state.txt", "r") as statefile:
@@ -157,8 +162,7 @@ class CrawlerControl:
         return crawler_state
 
 
-
-def main(): #pylint: disable=missing-function-docstring
+def main():  # pylint: disable=missing-function-docstring
     cc = CrawlerControl()
     dc = DiscordClient()
     dc.load_docs()
