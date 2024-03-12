@@ -6,6 +6,7 @@
 """
 from random import choice, randrange
 from string import punctuation
+import subprocess
 import os
 
 import discord
@@ -141,8 +142,24 @@ class DiscordClient:
         sorted_citations = sorted(sorted_citations, reverse=True)
         return [{v: k} for k, v in sorted_citations]
 
+class CrawlerControl:
+    """
+        provides control interface to webcrawler
+    """
+    def __init__(self):
+        pass
+    def start_crawl(self):
+        _ = subprocess.Popen(["../automation_tests/automate.py"])
+    def check_crawl(self):
+        crawler_state = ""
+        with open("../automation_tests/crawler_state.txt", "r") as statefile:
+            crawler_state = statefile.read()
+        return crawler_state
+
+
 
 def main(): #pylint: disable=missing-function-docstring
+    cc = CrawlerControl()
     dc = DiscordClient()
     dc.load_docs()
     bot = dc.bot
@@ -161,6 +178,15 @@ def main(): #pylint: disable=missing-function-docstring
     async def reload_docs(ctx):
         dc.load_docs()
         await ctx.respond("reloaded docs with static query")
+
+    @loom.command()
+    async def start_crawl(ctx):
+        cc.start_crawl()
+        await ctx.respond("started crawler; use /check_crawl to check status")
+
+    @loom.command()
+    async def check_crawl(ctx):
+        await ctx.respond(cc.check_crawl())
 
     bot.add_application_command(loom)
     bot.run(os.getenv("TOKEN"))
