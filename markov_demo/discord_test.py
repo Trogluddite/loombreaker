@@ -153,11 +153,16 @@ class CrawlerControl:
         pass
 
     def start_crawl(self):
-        _ = subprocess.Popen(["../automation_tests/automate.py"])
+        """
+        start up the nutch crawler script
+        """
+        _ = subprocess.Popen(["../automation_tests/automate.py"]) #pylint: disable=consider-using-with
 
     def check_crawl(self):
-        crawler_state = ""
-        with open("../automation_tests/crawler_state.txt", "r") as statefile:
+        """
+        check the current status of the crawl operation
+        """
+        with open("../automation_tests/crawler_state.txt", "r", encoding="utf-8") as statefile:
             crawler_state = statefile.read()
         return crawler_state
 
