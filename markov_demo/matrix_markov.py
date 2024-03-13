@@ -5,7 +5,6 @@
 """
 import math
 import re
-import time
 
 from numpy import diag, matmul, matrix, pad, random, zeros
 
@@ -60,18 +59,8 @@ class MatrixMarkov:
         self._prob_recalc_needed = True
 
         # build or expand token -> index mapping
-        start_time = time.perf_counter()
         clean_text = self.clean_input(ingest_text)
-        stop_time = time.perf_counter()
-        print(f'Cleaning input: {stop_time - start_time:0.4f}s')
-
-        start_time = time.perf_counter()
         input_toks = self.tokenize_input(clean_text)
-        stop_time = time.perf_counter()
-        print(f'Tokenizing input: {stop_time - start_time:0.4f}s')
-
-        start_time = time.perf_counter()
-        print(f'ingesting document: {source_ref} with token count: {len(input_toks)}')
         for tok in input_toks:
             # expand the array by about half the token count if we don't have space
             # we'll have some slack; we'll trim it later
@@ -82,26 +71,19 @@ class MatrixMarkov:
                 self.token_index_map[tok] = self._token_count
                 self.index_token_map[self._token_count] = tok
                 self._token_count += 1
-        stop_time = time.perf_counter()
-        print(f'Ingesting doc: {stop_time - start_time:0.4f}s')
-        self._doc_ingestion_time_total += (stop_time-start_time)
 
         # vector indexes for each token; n, n+1 pairs represent bigrams
-        start_time = time.perf_counter()
         transition_vect = [self.token_index_map[x] for x in input_toks]
         for i in range(0, len(input_toks) - 1):
             col = transition_vect[i + 1]
             row = transition_vect[i]
             self._counts[col][row] = self._counts[col][row] + 1
-        stop_time = time.perf_counter()
-        print(f'counting transitions: {stop_time - start_time:0.4f}s')
 
         # trim array down to square of len(self._token_count)
         self._counts = self._counts[0:self._token_count, 0:self._token_count]
         self._pad_size = self._token_count
 
         # build 2-tuple -> source ref counts
-        start_time = time.perf_counter()
         for i in range(0, len(transition_vect) - 1):
             if i == len(transition_vect) - 1:
                 break
@@ -113,14 +95,10 @@ class MatrixMarkov:
                     self.tuple_to_source_map[trans_tuple] = {source_ref: 1}
             else:
                 self.tuple_to_source_map[trans_tuple] = {source_ref: 1}
-        stop_time = time.perf_counter()
-        print(f'build source_ref counts: {stop_time-start_time:0.4f}s')
-        print('--------------------------------------')
 
         # recalc transition matrix
         if not defer_recalc:
             self.recalc_probabilities()
-        print(f'ingestion_total = {self._doc_ingestion_time_total}')
 
     def clean_input(self, input_text: str):
         """
@@ -156,7 +134,6 @@ class MatrixMarkov:
         return words
 
     def recalc_probabilities(self):
-        start_time=time.perf_counter()
         """
         rebuild the transition probability matrix, thusly:
             1. sum every 'count' column. Count's are matrix C
@@ -168,8 +145,6 @@ class MatrixMarkov:
         diag_matx = diag([(1 / x if x != 0 else 0) for x in col_sums])
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
-        stop_time=time.perf_counter()
-        print(f'recalc probabilities: {stop_time-start_time}:0.4fs')
 
 
     def get_markov_chain(self, max_len: int, start_token: str):
