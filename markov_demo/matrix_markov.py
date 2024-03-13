@@ -3,6 +3,7 @@
     A class for building Bayeseian Networks and retreivinig Markov chains
     MatrixMarkov uses bigrams/2-grams; optionally, references are recorded
 """
+import re
 
 from numpy import diag, matmul, matrix, pad, random, zeros
 
@@ -51,13 +52,15 @@ class MatrixMarkov:
         self._prob_recalc_needed = True
 
         # build or expand token -> index mapping
-        input_toks = self.tokenize_input(ingest_text)
+        clean_text = self.clean_input(ingest_text)
+        input_toks = self.tokenize_input(clean_text)
         print(f'ingesting document: {source_ref} with token count: {len(input_toks)}')
         for tok in input_toks:
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self.index_token_map[self._token_count] = tok
                 self._token_count += 1
+                print(self._token_count)
                 self._counts = pad(self._counts, (0, 1))
 
         # vector indexes for each token; n, n+1 pairs represent bigrams
@@ -83,6 +86,17 @@ class MatrixMarkov:
         # recalc transition matrix
         if not defer_recalc:
             self.recalc_probabilities()
+
+    def clean_input(self, input_text: str):
+        """
+        remove meta-text and other non-semantic tokens, based on some guesses
+        about what such should be removed
+        """
+        input_text = re.sub(r'--', ' ', input_text)
+        input_text = re.sub('[\[].*?[\]]', '', input_text)
+        input_text = re.sub(r'(\b|\s+\-?|^\-?)(\d+|\d*\.\d+)\b','', input_text)
+        return input_text
+
 
     def tokenize_input(self, input_text: str):
         """
