@@ -106,7 +106,7 @@ class MatrixMarkov:
         about what such should be removed
         """
         input_text = re.sub(r'--', ' ', input_text)
-        input_text = re.sub('[\[].*?[\]]', '', input_text)
+        input_text = re.sub(r'[\[].*?[\]]', '', input_text)
         input_text = re.sub(r'(\b|\s+\-?|^\-?)(\d+|\d*\.\d+)\b','', input_text)
         return input_text
 
