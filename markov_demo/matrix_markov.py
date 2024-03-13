@@ -3,6 +3,7 @@
     A class for building Bayeseian Networks and retreivinig Markov chains
     MatrixMarkov uses bigrams/2-grams; optionally, references are recorded
 """
+import math
 import re
 import time
 
@@ -33,9 +34,15 @@ class MatrixMarkov:
         self.transition_matx = matrix('0;0')
         self.tuple_to_source_map = {}
 
-        self._counts = zeros(shape=(0, 0))
+        # expect the first document to have about 5k unique tokens;
+        # we'll over-allocate (hopefully), expand if needed, then
+        # trim down to size when we're done.
+        self._pad_size = 5000
+        self._counts = zeros(shape=(self._pad_size, self._pad_size))
         self._prob_recalc_needed = False
         self._token_count = 0
+
+        self._doc_ingestion_time_total = 0
 
     def add_document(
             self,
@@ -66,13 +73,18 @@ class MatrixMarkov:
         start_time = time.perf_counter()
         print(f'ingesting document: {source_ref} with token count: {len(input_toks)}')
         for tok in input_toks:
+            # expand the array by about half the token count if we don't have space
+            # we'll have some slack; we'll trim it later
+            if self._token_count+1 >= self._pad_size:
+                self._pad_size = self._pad_size + (math.floor(self._pad_size / 2))
+                self._counts = pad(self._counts, (0, self._pad_size))
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self.index_token_map[self._token_count] = tok
                 self._token_count += 1
-                self._counts = pad(self._counts, (0, 1))
         stop_time = time.perf_counter()
         print(f'Ingesting doc: {stop_time - start_time:0.4f}s')
+        self._doc_ingestion_time_total += (stop_time-start_time)
 
         # vector indexes for each token; n, n+1 pairs represent bigrams
         start_time = time.perf_counter()
@@ -83,6 +95,10 @@ class MatrixMarkov:
             self._counts[col][row] = self._counts[col][row] + 1
         stop_time = time.perf_counter()
         print(f'counting transitions: {stop_time - start_time:0.4f}s')
+
+        # trim array down to square of len(self._token_count)
+        self._counts = self._counts[0:self._token_count, 0:self._token_count]
+        self._pad_size = self._token_count
 
         # build 2-tuple -> source ref counts
         start_time = time.perf_counter()
@@ -103,10 +119,8 @@ class MatrixMarkov:
 
         # recalc transition matrix
         if not defer_recalc:
-            start_time = time.perf_counter()
             self.recalc_probabilities()
-            stop_time=time.perf_counter()
-            print(f'recalc probabilities: {stop_time-start_time}:0.4fs')
+        print(f'ingestion_total = {self._doc_ingestion_time_total}')
 
     def clean_input(self, input_text: str):
         """
@@ -117,7 +131,6 @@ class MatrixMarkov:
         input_text = re.sub('[\[].*?[\]]', '', input_text)
         input_text = re.sub(r'(\b|\s+\-?|^\-?)(\d+|\d*\.\d+)\b','', input_text)
         return input_text
-
 
     def tokenize_input(self, input_text: str):
         """
@@ -143,6 +156,7 @@ class MatrixMarkov:
         return words
 
     def recalc_probabilities(self):
+        start_time=time.perf_counter()
         """
         rebuild the transition probability matrix, thusly:
             1. sum every 'count' column. Count's are matrix C
@@ -154,6 +168,9 @@ class MatrixMarkov:
         diag_matx = diag([(1 / x if x != 0 else 0) for x in col_sums])
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
+        stop_time=time.perf_counter()
+        print(f'recalc probabilities: {stop_time-start_time}:0.4fs')
+
 
     def get_markov_chain(self, max_len: int, start_token: str):
         """
