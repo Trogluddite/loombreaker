@@ -58,6 +58,7 @@ class MatrixMarkov:
         """
         self._prob_recalc_needed = True
 
+        print(f'loading doc {source_ref}')
         # build or expand token -> index mapping
         clean_text = self.clean_input(ingest_text)
         input_toks = self.tokenize_input(clean_text)
@@ -100,14 +101,31 @@ class MatrixMarkov:
         if not defer_recalc:
             self.recalc_probabilities()
 
+    # this should be replaced with a strategy pattern that matches cleaning strategy to
+    # text source -- this strategy focuses on cleaning text from Wikipedia
     def clean_input(self, input_text: str):
         """
         remove meta-text and other non-semantic tokens, based on some guesses
         about what such should be removed
         """
-        input_text = re.sub(r'--', ' ', input_text)
+        # inline citations
         input_text = re.sub(r'[\[].*?[\]]', '', input_text)
-        input_text = re.sub(r'(\b|\s+\-?|^\-?)(\d+|\d*\.\d+)\b','', input_text)
+        # most references (line with '^' and subsewuent line)
+        input_text = re.sub(r'.*\^(.*\r?\n){2}','',input_text)
+        # any parenthetical
+        input_text = re.sub(r'\(.+\)','', input_text)
+        # any remaining 'referency' lines
+        new_text = ""
+        for line in input_text.split('\n'):
+            if not re.search(r'(ISBN|Bibcode|S2CID)', line):
+                new_text += line + '\n'
+        # any lines shorter than 100 characters in length (e.g., list items)
+        input_text = new_text
+        new_text = ""
+        for line in input_text.split('\n'):
+            if len(line) > 70:
+                new_text += line + '\n'
+        input_text = new_text
         return input_text
 
     def tokenize_input(self, input_text: str):
