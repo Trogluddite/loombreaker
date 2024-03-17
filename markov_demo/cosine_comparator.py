@@ -73,7 +73,7 @@ def dedupe_and_sort_citations(citation_list: list) -> list:
     return [{v: k} for k, v in sorted_citations]
 
 def get_cos_similarity(target : str, compareTo : str):
-    search_tokens = list(set(target.split()))
+    search_tokens = list(set(target.split() + compareTo.split()))
     targetCounts = {}
     for k in search_tokens:
         targetCounts[k] = target.count(k)
