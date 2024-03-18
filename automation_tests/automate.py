@@ -27,6 +27,8 @@ def main():
     
     #Initialize Crawl
     subprocess.run([f"{NUTCH_BIN}", "inject", f"{CRAWL_DIR}/crawldb", SEED_FILE], env=local_env, check=True)
+    ws("Crawl Initializing...")
+    subprocess.run([f"{NUTCH_HOME}/bin/nutch", "inject", f"{CRAWL_DIR}/crawldb", SEED_FILE], check=True)
     
     #Run Crawler
     ws("Running Crawl...")
