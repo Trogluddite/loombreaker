@@ -6,6 +6,7 @@
 """
 from random import choice, randrange
 from string import punctuation
+import subprocess
 import os
 
 import discord
@@ -15,9 +16,8 @@ from dotenv import load_dotenv
 from matrix_markov import MatrixMarkov
 
 SOLR_URL = "http://20.84.107.89:8983/solr/"
-#SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
-SOLR_QUERY=f"nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
-
+# SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
+SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
 
 STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
 
@@ -32,6 +32,7 @@ class DiscordClient:
         stores, and interfaces with, MatrixMarkov instance
         providees interface to MatrixMarkov, and to SOLR
     """
+
     def __init__(self):
         load_dotenv()
         self.bot = discord.Bot()
@@ -79,7 +80,7 @@ class DiscordClient:
 
         if show_sources:
             top_citations = self.dedupe_and_sort_citations(
-            paragraph_data['citations'])[0:3]
+                paragraph_data['citations'])[0:3]
             for i in range(0, 3):
                 if i >= len(top_citations):
                     response_lines.append(
@@ -142,7 +143,31 @@ class DiscordClient:
         return [{v: k} for k, v in sorted_citations]
 
 
-def main(): #pylint: disable=missing-function-docstring
+class CrawlerControl:
+    """
+        provides control interface to webcrawler
+    """
+
+    def __init__(self):
+        pass
+
+    def start_crawl(self):
+        """
+        start up the nutch crawler script
+        """
+        _ = subprocess.Popen(["../automation_tests/automate.py"]) #pylint: disable=consider-using-with
+
+    def check_crawl(self):
+        """
+        check the current status of the crawl operation
+        """
+        with open("../automation_tests/crawler_state.txt", "r", encoding="utf-8") as statefile:
+            crawler_state = statefile.read()
+        return crawler_state
+
+
+def main():  # pylint: disable=missing-function-docstring
+    cc = CrawlerControl()
     dc = DiscordClient()
     dc.load_docs()
     bot = dc.bot
@@ -161,6 +186,15 @@ def main(): #pylint: disable=missing-function-docstring
     async def reload_docs(ctx):
         dc.load_docs()
         await ctx.respond("reloaded docs with static query")
+
+    @loom.command()
+    async def start_crawl(ctx):
+        cc.start_crawl()
+        await ctx.respond("started crawler; use /check_crawl to check status")
+
+    @loom.command()
+    async def check_crawl(ctx):
+        await ctx.respond(cc.check_crawl())
 
     bot.add_application_command(loom)
     bot.run(os.getenv("TOKEN"))

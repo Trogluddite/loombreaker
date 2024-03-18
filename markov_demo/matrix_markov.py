@@ -3,6 +3,8 @@
     A class for building Bayeseian Networks and retreivinig Markov chains
     MatrixMarkov uses bigrams/2-grams; optionally, references are recorded
 """
+import math
+import re
 
 from numpy import diag, matmul, matrix, pad, random, zeros
 
@@ -31,9 +33,15 @@ class MatrixMarkov:
         self.transition_matx = matrix('0;0')
         self.tuple_to_source_map = {}
 
-        self._counts = zeros(shape=(0, 0))
+        # expect the first document to have about 5k unique tokens;
+        # we'll over-allocate (hopefully), expand if needed, then
+        # trim down to size when we're done.
+        self._pad_size = 5000
+        self._counts = zeros(shape=(self._pad_size, self._pad_size))
         self._prob_recalc_needed = False
         self._token_count = 0
+
+        self._doc_ingestion_time_total = 0
 
     def add_document(
             self,
@@ -50,15 +58,20 @@ class MatrixMarkov:
         """
         self._prob_recalc_needed = True
 
+        print(f'loading doc {source_ref}')
         # build or expand token -> index mapping
-        input_toks = self.tokenize_input(ingest_text)
-        print(f'ingesting document: {source_ref} with token count: {len(input_toks)}')
+        clean_text = self.clean_input(ingest_text)
+        input_toks = self.tokenize_input(clean_text)
         for tok in input_toks:
+            # expand the array by about half the token count if we don't have space
+            # we'll have some slack; we'll trim it later
+            if self._token_count+1 >= self._pad_size:
+                self._pad_size = self._pad_size + (math.floor(self._pad_size / 2))
+                self._counts = pad(self._counts, (0, self._pad_size))
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self.index_token_map[self._token_count] = tok
                 self._token_count += 1
-                self._counts = pad(self._counts, (0, 1))
 
         # vector indexes for each token; n, n+1 pairs represent bigrams
         transition_vect = [self.token_index_map[x] for x in input_toks]
@@ -66,6 +79,10 @@ class MatrixMarkov:
             col = transition_vect[i + 1]
             row = transition_vect[i]
             self._counts[col][row] = self._counts[col][row] + 1
+
+        # trim array down to square of len(self._token_count)
+        self._counts = self._counts[0:self._token_count, 0:self._token_count]
+        self._pad_size = self._token_count
 
         # build 2-tuple -> source ref counts
         for i in range(0, len(transition_vect) - 1):
@@ -83,6 +100,33 @@ class MatrixMarkov:
         # recalc transition matrix
         if not defer_recalc:
             self.recalc_probabilities()
+
+    # this should be replaced with a strategy pattern that matches cleaning strategy to
+    # text source -- this strategy focuses on cleaning text from Wikipedia
+    def clean_input(self, input_text: str):
+        """
+        remove meta-text and other non-semantic tokens, based on some guesses
+        about what such should be removed
+        """
+        # inline citations
+        input_text = re.sub(r'[\[].*?[\]]', '', input_text)
+        # most references (line with '^' and subsewuent line)
+        input_text = re.sub(r'.*\^(.*\r?\n){2}','',input_text)
+        # any parenthetical
+        input_text = re.sub(r'\(.+\)','', input_text)
+        # any remaining 'referency' lines
+        new_text = ""
+        for line in input_text.split('\n'):
+            if not re.search(r'(ISBN|Bibcode|S2CID)', line):
+                new_text += line + '\n'
+        # any lines shorter than 100 characters in length (e.g., list items)
+        input_text = new_text
+        new_text = ""
+        for line in input_text.split('\n'):
+            if len(line) > 70:
+                new_text += line + '\n'
+        input_text = new_text
+        return input_text
 
     def tokenize_input(self, input_text: str):
         """
@@ -119,6 +163,7 @@ class MatrixMarkov:
         diag_matx = diag([(1 / x if x != 0 else 0) for x in col_sums])
         self.transition_matx = matmul(self._counts, diag_matx)
         self._prob_recalc_needed = False
+
 
     def get_markov_chain(self, max_len: int, start_token: str):
         """
