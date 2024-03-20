@@ -6,12 +6,15 @@
 """
 from random import choice, randrange
 from string import punctuation
+from math import sqrt
 import subprocess
 import os
 
 import discord
 import requests
 from dotenv import load_dotenv
+from numpy import array as np_array
+from numpy import dot as np_dot
 
 from matrix_markov import MatrixMarkov
 
@@ -56,26 +59,30 @@ class DiscordClient:
             self.mat_mark.add_document(cont, src, defer_recalc=True)
         self.mat_mark.recalc_probabilities()
 
-    def get_resp(self, incomming_message, show_sources=False):
+    def get_resp(self, match_target, show_sources=False,
+                 max_rounds=250, target_score=0.85):
         """
             get a response from the MatrixMarkov instance, and format it for delivery
             back to the discord client.
 
             uses instance methods "get_paragraph" & "dedupe_and_sort_citations"
         """
-        input_toks = [x.strip(punctuation) for x in incomming_message.split()]
-        start_tok = choice(input_toks)
-        # fixme: should use an input tok
-        paragraph_data = self.get_paragraph()
+        best_match_score = 0.0
+        best_match_paragraph = {}
+        iter = 0
+        while best_match_score < target_score and iter < max_rounds:
+            p = self.get_paragraph()
+            similarity = self.get_cos_similarity(match_target, " ".join(p['sentences']))
+            if similarity > best_match_score:
+                best_match_score = similarity
+                best_match_paragraph = p
+            iter += 1
+            if iter % 25 == 0:
+                print(f"iter {iter} passed")
+
+        paragraph_data = best_match_paragraph
 
         response_lines = []
-        response_lines.append("GENERATED FROM CORPUS:")
-        if len(paragraph_data['sentences']) == 0:
-            response_lines.append(
-                f"**token {start_tok} did not match any in the corpus :(**"
-            )
-            return "\n".join(response_lines)
-        # response is python list with words in it
         response_lines.append(f"{ ' '.join(paragraph_data['sentences'])}")
 
         if show_sources:
@@ -109,7 +116,7 @@ class DiscordClient:
         unsorted_citations = unsorted_citations + \
             list(dict(resp_dict['sources']).items())
 
-        for _ in range(0, randrange(5, 15)):
+        for _ in range(0, randrange(3, 7)):
             start_tok = choice(list(self.mat_mark.token_index_map.keys()))
             resp_dict = self.mat_mark.get_markov_chain(100, start_tok)
             sentences.append(" ".join(resp_dict['markov_chain']))
@@ -141,6 +148,22 @@ class DiscordClient:
 
         sorted_citations = sorted(sorted_citations, reverse=True)
         return [{v: k} for k, v in sorted_citations]
+
+    def get_cos_similarity(self, target : str, compareTo : str):
+        search_tokens = list(set(target.split() + compareTo.split()))
+        targetCounts = {}
+        for k in search_tokens:
+            targetCounts[k] = target.count(k)
+        compareToCounts = {}
+        for k in search_tokens:
+            compareToCounts[k] = compareTo.count(k)
+
+        target_vect = np_array([targetCounts[x] for x in targetCounts.keys()])
+        compare_to_vect = np_array([compareToCounts[x] for x in compareToCounts.keys()])
+        num = np_dot(target_vect, compare_to_vect)
+        denom = sqrt(target_vect.dot(target_vect)) * sqrt(compare_to_vect.dot(compare_to_vect))
+
+        return num/denom
 
 
 class CrawlerControl:
@@ -179,8 +202,11 @@ def main():  # pylint: disable=missing-function-docstring
     loom = discord.SlashCommandGroup("loom", "search related commands")
 
     @loom.command()
-    async def search(ctx, search_string: str, show_sources: bool):
-        await ctx.respond(dc.get_resp(search_string, show_sources))
+    async def search(ctx, match_target: str, show_sources: bool,
+                     max_rounds=50, target_score=0.85):
+        await ctx.defer()
+        await ctx.followup.send(
+                dc.get_resp(match_target, show_sources, max_rounds, target_score))
 
     @loom.command()
     async def reload_docs(ctx):
