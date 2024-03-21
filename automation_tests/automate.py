@@ -46,23 +46,23 @@ def main():
         raw_latest_segment = subprocess.run(f"ls -d {SEGMENTS_DIR}/2* | tail -1", shell=True, text=True, capture_output=True)
         latest_segment = raw_latest_segment.stdout.strip()
           
-        while True: #A glitch was introduced when the process was stopped in the middle, and it required the half finished segments to be deleted. I added a command that removes the segment if the command cannot finished.
-            try:
-                #Fetch
-                ws("Fetching Pages...")
-                subprocess.run([f"{NUTCH_BIN}", "fetch", latest_segment], env=local_env, check=True)
+        #A glitch was introduced when the process was stopped in the middle, and it required the half finished segments to be deleted. I added a command that removes the segment if the command cannot finished.
+        try:
+            #Fetch
+            ws("Fetching Pages...")
+            subprocess.run([f"{NUTCH_BIN}", "fetch", latest_segment], env=local_env, check=True)
         
-                #Parse
-                ws("Parsing Data...")
-                subprocess.run([f"{NUTCH_BIN}", "parse", latest_segment], env=local_env, check=True)
+            #Parse
+            ws("Parsing Data...")
+            subprocess.run([f"{NUTCH_BIN}", "parse", latest_segment], env=local_env, check=True)
 
-                #Update DB
-                ws("Updating Database...")
-                subprocess.run([f"{NUTCH_BIN}", "updatedb", f"{CRAWL_DIR}/crawldb", latest_segment], env=local_env, check=True)
-                print("Crawl Complete!")
-                ws("Crawl Finished...")
-            except:
-                subprocess.run(["rm", "-r", latest_segment])
+            #Update DB
+            ws("Updating Database...")
+            subprocess.run([f"{NUTCH_BIN}", "updatedb", f"{CRAWL_DIR}/crawldb", latest_segment], env=local_env, check=True)
+            print("Crawl Complete!")
+            ws("Crawl Finished...")
+        except:
+            subprocess.run(["rm", "-r", latest_segment])
 
     #Invert Links for Indexing
     ws("Preparing Links for Indexing...")
