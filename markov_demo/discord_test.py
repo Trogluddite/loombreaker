@@ -83,6 +83,7 @@ class DiscordClient:
         paragraph_data = best_match_paragraph
 
         response_lines = []
+        response_lines.append(f"Best Match Score: {best_match_score}")
         response_lines.append(f"{ ' '.join(paragraph_data['sentences'])}")
 
         if show_sources:
@@ -201,9 +202,13 @@ def main():  # pylint: disable=missing-function-docstring
 
     loom = discord.SlashCommandGroup("loom", "search related commands")
 
+    # Pycord seems to be abusing the type annotatiions here; pyright doesn't care for it
     @loom.command()
-    async def search(ctx, match_target: str, show_sources: bool,
-                     max_rounds=50, target_score=0.85):
+    async def search(ctx,
+                     match_target: discord.Option(str),
+                     show_sources: discord.Option(bool),
+                     max_rounds: discord.Option(int)=50,
+                     target_score: discord.Option(float)=0.85):
         await ctx.defer()
         await ctx.followup.send(
                 dc.get_resp(match_target, show_sources, max_rounds, target_score))
