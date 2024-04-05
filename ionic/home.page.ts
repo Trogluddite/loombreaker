@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { DataService } from '/api/480Project/data.service';
+import { ApiService } from '../api.service';
 
 @Component({
   selector: 'app-home',
@@ -8,16 +8,19 @@ import { DataService } from '/api/480Project/data.service';
 })
 export class HomePage {
   query: string = '';
-  cats: any[] = [];
+  results: any[] = [];
 
-  constructor(private dataService: DataService) { }
-  
-  searchForCats() {
-    this.dataService.searchForCats(this.query).subscribe((response: any) => {
-      console.log(response); // Log the response to see if it contains the expected data
-      this.cats = response.sentences;
-      console.log(this.cats); // Log the cats array after it's been populated
-    });
-  }   
+  constructor(private apiService: ApiService) {}
+
+  search() {
+    this.apiService.search(this.query).subscribe(
+      data => {
+        this.results = data.sentences; // Assuming the response has a 'sentences' property
+      },
+      error => {
+        console.error('Error fetching data: ', error);
+      }
+    );
+  }
 }
 
