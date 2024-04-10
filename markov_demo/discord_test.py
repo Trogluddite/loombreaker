@@ -215,8 +215,9 @@ def main():  # pylint: disable=missing-function-docstring
 
     @loom.command()
     async def reload_docs(ctx):
+        await ctx.defer()
         dc.load_docs()
-        await ctx.respond("reloaded docs with static query")
+        await ctx.followup.send("reloaded docs with status query!")
 
     @loom.command()
     async def start_crawl(ctx):
