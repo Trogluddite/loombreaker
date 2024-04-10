@@ -185,7 +185,7 @@ class CrawlerControl:
         """
         check the current status of the crawl operation
         """
-        with open("../automation_tests/status.txt", "r", encoding="utf-8") as statefile:
+        with open("status.txt", "r", encoding="utf-8") as statefile:
             crawler_state = statefile.read()
         return crawler_state
 
