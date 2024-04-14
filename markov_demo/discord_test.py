@@ -21,7 +21,7 @@ from matrix_markov import MatrixMarkov
 SOLR_URL = "http://20.84.107.89:8983/solr/"
 # SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
 SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q="
-query_content = "Argon"
+query_content = "Helium"
 
 query = f"{SOLR_URL}{SOLR_QUERY}{query_content}"
 
