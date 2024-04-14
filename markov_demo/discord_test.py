@@ -230,7 +230,7 @@ def main():  # pylint: disable=missing-function-docstring
         await ctx.followup.send("Query Updated, please reload documents!")
     
     @loom.command()
-    async def print_query(ctx): # Added for testing purposes
+    async def print_query(ctx):
       await ctx.followup.respond(query)
 
     @loom.command()
