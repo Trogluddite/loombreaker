@@ -60,7 +60,7 @@ class DiscordClient:
             self.mat_mark.add_document(cont, src, defer_recalc=True)
         self.mat_mark.recalc_probabilities()
       
-    def update_query(new_query):
+    def update_query(self, new_query):
       STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
 
     def get_resp(self, match_target, show_sources=False,
