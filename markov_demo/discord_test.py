@@ -63,7 +63,7 @@ class DiscordClient:
       self.query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
 
     def get_query(self):
-      return query
+      return self.query
 
     def get_resp(self, match_target, show_sources=False,
                  max_rounds=250, target_score=0.85):
