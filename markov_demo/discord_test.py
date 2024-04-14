@@ -23,8 +23,6 @@ SOLR_URL = "http://20.84.107.89:8983/solr/"
 SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q="
 query_content = "Helium"
 
-query = f"{SOLR_URL}{SOLR_QUERY}{query_content}"
-
 EMPTY_DOC = {'response': {
     'docs': [{'content': "no content", "url": "NO URL"}]}}
 SOLR_QUERY_TIMEOUT = 180
@@ -41,13 +39,14 @@ class DiscordClient:
         load_dotenv()
         self.bot = discord.Bot()
         self.mat_mark = MatrixMarkov()
+        self.query = f"{SOLR_URL}{SOLR_QUERY}{query_content}"
 
     def load_docs(self):
         """
         retrieves documents from the source (in this case, SOLR)
         and then inserts them into the MatrixMarkov instance
         """
-        response = requests.get(query, timeout=SOLR_QUERY_TIMEOUT)
+        response = requests.get(self.query, timeout=SOLR_QUERY_TIMEOUT)
         # super basic safety check
         if response.status_code == 200:
             docs_json = response.json()
@@ -61,8 +60,7 @@ class DiscordClient:
         self.mat_mark.recalc_probabilities()
       
     def update_query(self, new_query):
-      query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
-      return query
+      self.query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
 
     def get_query(self):
       return query
