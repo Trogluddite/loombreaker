@@ -63,6 +63,9 @@ class DiscordClient:
     def update_query(self, new_query):
       query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
 
+    def get_query(self):
+      return query
+
     def get_resp(self, match_target, show_sources=False,
                  max_rounds=250, target_score=0.85):
         """
@@ -231,7 +234,7 @@ def main():  # pylint: disable=missing-function-docstring
     
     @loom.command()
     async def print_query(ctx):
-      await ctx.followup.respond(query)
+      await ctx.followup.respond(dc.get_query())
 
     @loom.command()
     async def start_crawl(ctx):
