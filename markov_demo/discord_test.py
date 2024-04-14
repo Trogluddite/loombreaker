@@ -227,9 +227,7 @@ def main():  # pylint: disable=missing-function-docstring
     async def change_query(ctx, new_query: discord.Option(str)):
         await ctx.defer()
         dc.update_query(new_query)
-        await ctx.defer()
-        dc.load_docs()
-        await ctx.followup.send("Query Updated, documents have been automatically reloaded!")
+        await ctx.followup.send("Query Updated, please reload documents!")
 
     @loom.command()
     async def start_crawl(ctx):
