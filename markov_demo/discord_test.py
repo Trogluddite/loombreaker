@@ -234,7 +234,7 @@ def main():  # pylint: disable=missing-function-docstring
     
     @loom.command()
     async def print_query(ctx):
-        await ctx.followup.respond(dc.get_query())
+        await ctx.respond(dc.get_query())
 
     @loom.command()
     async def start_crawl(ctx):
