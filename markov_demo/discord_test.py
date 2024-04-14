@@ -228,6 +228,10 @@ def main():  # pylint: disable=missing-function-docstring
         await ctx.defer()
         dc.update_query(new_query)
         await ctx.followup.send("Query Updated, please reload documents!")
+    
+    @loom.command()
+    async def print_query(ctx): # Added for testing purposes
+      await ctx.followup.send(query)
 
     @loom.command()
     async def start_crawl(ctx):
