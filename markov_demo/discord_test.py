@@ -65,6 +65,9 @@ class DiscordClient:
     def get_query(self):
       return self.query
 
+    def cleanup(self):
+      self.mat_mark.reset_data_structures()
+
     def get_resp(self, match_target, show_sources=False,
                  max_rounds=250, target_score=0.85):
         """
@@ -222,6 +225,7 @@ def main():  # pylint: disable=missing-function-docstring
     @loom.command()
     async def reload_docs(ctx):
         await ctx.defer()
+        dc.cleanup()
         dc.load_docs()
         await ctx.followup.send("reloaded docs with status query!")
 
