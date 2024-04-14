@@ -62,6 +62,7 @@ class DiscordClient:
       
     def update_query(self, new_query):
       query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
+      return query
 
     def get_query(self):
       return query
