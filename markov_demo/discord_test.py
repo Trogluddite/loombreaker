@@ -20,9 +20,10 @@ from matrix_markov import MatrixMarkov
 
 SOLR_URL = "http://20.84.107.89:8983/solr/"
 # SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
-SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
+SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q="
+query_content = "Argon"
 
-STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
+STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}{query_content}"
 
 EMPTY_DOC = {'response': {
     'docs': [{'content': "no content", "url": "NO URL"}]}}
@@ -58,6 +59,9 @@ class DiscordClient:
             src = doc['url']
             self.mat_mark.add_document(cont, src, defer_recalc=True)
         self.mat_mark.recalc_probabilities()
+      
+    def update_query(new_query):
+      STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
 
     def get_resp(self, match_target, show_sources=False,
                  max_rounds=250, target_score=0.85):
@@ -218,6 +222,14 @@ def main():  # pylint: disable=missing-function-docstring
         await ctx.defer()
         dc.load_docs()
         await ctx.followup.send("reloaded docs with status query!")
+
+    @loom.command()
+    async def change_query(ctx, new_query: discord.Option(str)):
+        await ctx.defer()
+        dc.update_query(new_query)
+        await ctx.defer()
+        dc.load_docs()
+        await ctx.followup.send("Query Updated, documents have been automatically reloaded!")
 
     @loom.command()
     async def start_crawl(ctx):
