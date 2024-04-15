@@ -67,7 +67,10 @@ class MatrixMarkov:
             # we'll have some slack; we'll trim it later
             if self._token_count+1 >= self._pad_size:
                 self._pad_size = self._pad_size + (math.floor(self._pad_size / 2))
+                # The following line and the code 2 lines down were added to address excessive memory use
+                old_counts = self._counts
                 self._counts = pad(self._counts, (0, self._pad_size))
+                del old_counts
             if self.token_index_map.get(tok, None) is None:
                 self.token_index_map[tok] = self._token_count
                 self.index_token_map[self._token_count] = tok
