@@ -53,11 +53,17 @@ class DiscordClient:
         else:
             docs_json = EMPTY_DOC
 
+        #Deletes unnecessary response data from memory
+        del response
+
         for doc in list(docs_json['response']['docs']):
             cont = doc['content']
             src = doc['url']
             self.mat_mark.add_document(cont, src, defer_recalc=True)
         self.mat_mark.recalc_probabilities()
+
+        # Deletes unnecessary docs_json data
+        del docs_json
       
     def update_query(self, new_query):
       self.query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
