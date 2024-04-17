@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Search App</ion-title>
+    <ion-title>Search App for 480</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -9,11 +9,44 @@
     <ion-label position="floating">Search Query</ion-label>
     <ion-input [(ngModel)]="query"></ion-input>
   </ion-item>
+  <ion-item>
+        Clean
+   <ion-toggle [(ngModel)]="clean"></ion-toggle>
+  </ion-item>
+  <ion-item>
+    Show Citations
+    <ion-toggle [(ngModel)]="showSources"></ion-toggle>
+  </ion-item>
+ 
   <ion-button expand="block" (click)="search()">Search</ion-button>
-  <ion-card *ngFor="let sentence of results">
+
+  <ion-card *ngIf="result">
+    <ion-card-header>
+      <ion-card-title>Search Result</ion-card-title>
+    </ion-card-header>
     <ion-card-content>
-      {{ sentence }}
+      <!-- For displaying sentences -->
+      <ion-list *ngIf="result.sentences">
+        <ion-list-header>Sentences</ion-list-header>
+        <ion-item *ngFor="let sentence of result.sentences">
+          {{ sentence }}
+        </ion-item>
+      </ion-list>
+      <!-- For displaying text -->
+      <p *ngIf="result.text">{{ result.text }}</p>
+      <!-- For displaying citations -->
+      <ion-list *ngIf="result.citations">
+        <ion-list-header>Citations</ion-list-header>
+        <ion-item *ngFor="let citation of result.citations">
+          {{ citation | json }}
+        </ion-item>
+      </ion-list>
+      <!-- For displaying top_citations -->
+      <ion-list *ngIf="result.top_citations">
+        <ion-list-header>Top Citations</ion-list-header>
+        <ion-item *ngFor="let citation of result.top_citations">
+          {{ citation | json }}
+        </ion-item>
+      </ion-list>
     </ion-card-content>
   </ion-card>
-</ion-content>
-
