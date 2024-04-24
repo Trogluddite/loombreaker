@@ -9,8 +9,9 @@ from matrix_markov import MatrixMarkov
 
 SOLR_QUERY_TIMEOUT = 180
 SOLR_URL = "http://20.84.107.89:8983/solr/"
-SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
-STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
+SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q="
+query_content = "Argon"
+STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}{query_content}"
 
 response = requests.get(
     STATIC_QUERY_STR,
@@ -25,6 +26,9 @@ for doc in list(docs_json['response']['docs']):
     mm.add_document(cont, src, defer_recalc=True)
 mm.recalc_probabilities()
 
+def update_query(new_content):
+    ''' Updates the query used for document loading '''
+    STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}{new_content}"
 
 def get_paragraph():
     ''' make a fake "paragraph" from markov data, includes list of citations '''

@@ -20,9 +20,8 @@ from matrix_markov import MatrixMarkov
 
 SOLR_URL = "http://20.84.107.89:8983/solr/"
 # SOLR_QUERY = "nutch/select?fl=url%2Ccontent&indent=true&q.op=OR&q=hydrogen&rows=2"
-SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q=Argon"
-
-STATIC_QUERY_STR = f"{SOLR_URL}{SOLR_QUERY}"
+SOLR_QUERY = "nutch/select?fl=content%2Ctitle%2Curl&fq=url%3A%22https%3A%2F%2Fen.m.wikipedia.org*%22&indent=true&q.op=OR&q="
+query_content = "Helium"
 
 EMPTY_DOC = {'response': {
     'docs': [{'content': "no content", "url": "NO URL"}]}}
@@ -40,24 +39,40 @@ class DiscordClient:
         load_dotenv()
         self.bot = discord.Bot()
         self.mat_mark = MatrixMarkov()
+        self.query = f"{SOLR_URL}{SOLR_QUERY}{query_content}"
 
     def load_docs(self):
         """
         retrieves documents from the source (in this case, SOLR)
         and then inserts them into the MatrixMarkov instance
         """
-        response = requests.get(STATIC_QUERY_STR, timeout=SOLR_QUERY_TIMEOUT)
+        response = requests.get(self.query, timeout=SOLR_QUERY_TIMEOUT)
         # super basic safety check
         if response.status_code == 200:
             docs_json = response.json()
         else:
             docs_json = EMPTY_DOC
 
+        #Deletes unnecessary response data from memory
+        del response
+
         for doc in list(docs_json['response']['docs']):
             cont = doc['content']
             src = doc['url']
             self.mat_mark.add_document(cont, src, defer_recalc=True)
         self.mat_mark.recalc_probabilities()
+
+        # Deletes unnecessary docs_json data
+        del docs_json
+      
+    def update_query(self, new_query):
+      self.query = f"{SOLR_URL}{SOLR_QUERY}{new_query}"
+
+    def get_query(self):
+      return self.query
+
+    def cleanup(self):
+      self.mat_mark.reset_data_structures()
 
     def get_resp(self, match_target, show_sources=False,
                  max_rounds=250, target_score=0.85):
@@ -216,8 +231,19 @@ def main():  # pylint: disable=missing-function-docstring
     @loom.command()
     async def reload_docs(ctx):
         await ctx.defer()
+        dc.cleanup()
         dc.load_docs()
         await ctx.followup.send("reloaded docs with status query!")
+
+    @loom.command()
+    async def change_query(ctx, new_query: discord.Option(str)):
+        await ctx.defer()
+        dc.update_query(new_query)
+        await ctx.followup.send("Query Updated, please reload documents!")
+    
+    @loom.command()
+    async def print_query(ctx):
+        await ctx.respond(dc.get_query())
 
     @loom.command()
     async def start_crawl(ctx):
