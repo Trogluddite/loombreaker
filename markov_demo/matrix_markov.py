@@ -242,15 +242,6 @@ class MatrixMarkov:
             if val > 0:
                 print(f'idx: {idx}, val: {val}')
 
-    def reset_data_structures(self):
-        '''
-        Intended for cleaning old data
-        '''
-        self._counts = zeros(shape=(self._pad_size, self._pad_size))
-        self.transition_matx = matrix('0;0')
-        self.tuple_to_source_map = {}
-
-
 
 def main():  # pylint: disable=missing-function-docstring
     pass
